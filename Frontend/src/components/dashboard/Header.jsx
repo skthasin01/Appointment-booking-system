@@ -1,4 +1,6 @@
-import { FaBell, FaSearch, FaBars } from "react-icons/fa";
+import { FaBell, FaSearch } from "react-icons/fa";
+
+import TextInput from "../form/TextInput";
 
 export default function Header() {
   return (
@@ -16,15 +18,13 @@ export default function Header() {
 
       <div className="flex items-center gap-5">
 
-        <div className="hidden md:flex items-center bg-slate-100
-          rounded-lg px-3 py-2">
-          <FaSearch className="text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="bg-transparent outline-none px-2 text-sm w-32"
-          />
-        </div>
+        <TextInput
+          aria-label="Search"
+          type="text"
+          icon={FaSearch}
+          placeholder="Search..."
+          containerClassName="hidden md:block w-56"
+        />
 
         <button className="relative text-slate-500">
           <FaBell size={20} />
