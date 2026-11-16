@@ -1,11 +1,14 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import Base, engine
 import models
-from router import auth
+from database import Base, engine
+from router import auth, doctors
 
-Base.metadata.create_all(bind=engine)   # creates the database tables
+if os.getenv("USE_CREATE_ALL", "false").lower() == "true":
+    Base.metadata.create_all(bind=engine)  # creates the database tables
 
 app = FastAPI()
 
@@ -18,6 +21,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(doctors.router)
 
 
 @app.get("/")
