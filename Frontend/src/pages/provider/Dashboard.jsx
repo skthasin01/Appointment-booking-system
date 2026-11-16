@@ -1,4 +1,3 @@
-
 import {
   FaCalendarCheck,
   FaClock,
@@ -9,7 +8,7 @@ import {
   FaEllipsisH,
 } from "react-icons/fa";
 
-import StatCard from "../../components/dashboard/Statcard";
+import StatCard from "../../components/dashboard/StatCard";
 
 const appointments = [
   {
@@ -53,7 +52,6 @@ const appointments = [
 export default function Dashboard() {
   return (
     <div className="min-h-screen space-y-7">
-
       {/* Welcome Section */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -71,9 +69,7 @@ export default function Dashboard() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium text-slate-400">
-            TODAY
-          </p>
+          <p className="text-xs font-medium text-slate-400">TODAY</p>
           <p className="mt-1 text-sm font-semibold text-slate-700">
             November 15, 2026
           </p>
@@ -82,7 +78,6 @@ export default function Dashboard() {
 
       {/* Statistics */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-
         <StatCard
           title="Total Appointments"
           value="128"
@@ -114,12 +109,10 @@ export default function Dashboard() {
           icon={FaDollarSign}
           color="bg-purple-100 text-purple-600"
         />
-
       </div>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-
         {/* Today's Schedule */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
@@ -127,9 +120,7 @@ export default function Dashboard() {
               <h2 className="font-semibold text-slate-800">
                 Today's Appointments
               </h2>
-              <p className="mt-1 text-xs text-slate-400">
-                Your daily schedule
-              </p>
+              <p className="mt-1 text-xs text-slate-400">Your daily schedule</p>
             </div>
 
             <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
@@ -157,12 +148,8 @@ export default function Dashboard() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-slate-800">
-                Pending Requests
-              </h2>
-              <p className="mt-1 text-xs text-slate-400">
-                Need your attention
-              </p>
+              <h2 className="font-semibold text-slate-800">Pending Requests</h2>
+              <p className="mt-1 text-xs text-slate-400">Need your attention</p>
             </div>
 
             <div className="rounded-xl bg-amber-50 p-3 text-amber-600">
@@ -186,12 +173,8 @@ export default function Dashboard() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-slate-800">
-                Monthly Revenue
-              </h2>
-              <p className="mt-1 text-xs text-slate-400">
-                Revenue overview
-              </p>
+              <h2 className="font-semibold text-slate-800">Monthly Revenue</h2>
+              <p className="mt-1 text-xs text-slate-400">Revenue overview</p>
             </div>
 
             <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
@@ -200,9 +183,7 @@ export default function Dashboard() {
           </div>
 
           <div className="mt-5 flex items-end gap-2">
-            <span className="text-3xl font-bold text-slate-800">
-              ৳25.5K
-            </span>
+            <span className="text-3xl font-bold text-slate-800">৳25.5K</span>
           </div>
 
           <p className="mt-4 flex items-center gap-1 text-xs font-medium text-emerald-600">
@@ -214,7 +195,6 @@ export default function Dashboard() {
 
       {/* Recent Appointments */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
         {/* Table Header */}
         <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center">
           <div>
@@ -234,7 +214,6 @@ export default function Dashboard() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full whitespace-nowrap text-left">
-
             <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-400">
               <tr>
                 <th className="px-6 py-4 font-semibold">Customer</th>
@@ -251,7 +230,6 @@ export default function Dashboard() {
                   key={appointment.id}
                   className="transition hover:bg-slate-50/70"
                 >
-
                   {/* Customer */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -287,8 +265,8 @@ export default function Dashboard() {
                         appointment.status === "Confirmed"
                           ? "bg-emerald-50 text-emerald-600"
                           : appointment.status === "Pending"
-                          ? "bg-amber-50 text-amber-600"
-                          : "bg-red-50 text-red-600"
+                            ? "bg-amber-50 text-amber-600"
+                            : "bg-red-50 text-red-600"
                       }`}
                     >
                       {appointment.status}
@@ -304,7 +282,6 @@ export default function Dashboard() {
                       <FaEllipsisH />
                     </button>
                   </td>
-
                 </tr>
               ))}
             </tbody>
@@ -317,9 +294,7 @@ export default function Dashboard() {
             Showing {appointments.length} recent appointments
           </p>
         </div>
-
       </div>
-
     </div>
   );
 }
