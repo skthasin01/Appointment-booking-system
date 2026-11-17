@@ -5,7 +5,7 @@ const destinations = [
   {
     title: 'Find doctors',
     text: 'Browse verified specialists and their open slots.',
-    path: '/providers',
+    path: '/doctors',
   },
   {
     title: 'About us',
@@ -38,7 +38,7 @@ const NotFound = () => (
           <FaHome />
           Back to home
         </Link>
-        <Link to="/providers" className="btn btn-ghost">
+        <Link to="/doctors" className="btn btn-ghost">
           <FaSearch />
           Find doctors
         </Link>

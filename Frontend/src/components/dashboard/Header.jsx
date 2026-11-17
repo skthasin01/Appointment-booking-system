@@ -9,7 +9,7 @@ export default function Header() {
 
       <div>
         <h2 className="text-xl font-semibold text-slate-800">
-          Provider Dashboard
+          Doctor Dashboard
         </h2>
         <p className="text-sm text-slate-500">
           Welcome back! Manage your appointments.
@@ -39,8 +39,8 @@ export default function Header() {
           </div>
 
           <div className="hidden sm:block">
-            <p className="text-sm font-semibold">Provider</p>
-            <p className="text-xs text-slate-500">Service Provider</p>
+            <p className="text-sm font-semibold">Doctor</p>
+            <p className="text-xs text-slate-500">Specialist</p>
           </div>
         </div>
 

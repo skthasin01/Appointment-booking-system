@@ -14,7 +14,7 @@ import useAuth from '../../hooks/useAuth';
 
 const navLinks = [
   { name: 'Home', path: '/' },
-  { name: 'Find Doctors', path: '/providers' },
+  { name: 'Find Doctors', path: '/doctors' },
   { name: 'About Us', path: '/about' },
   { name: 'Contact', path: '/contact' },
 ];
@@ -110,7 +110,7 @@ const Navbar = () => {
                 </li>
                 {isProvider && (
                   <li>
-                    <Link to="/provider/dashboard">
+                    <Link to="/doctor/dashboard">
                       <FaThLarge />
                       Dashboard
                     </Link>

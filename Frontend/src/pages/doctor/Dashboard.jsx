@@ -56,7 +56,7 @@ export default function Dashboard() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <p className="mb-1 text-sm font-medium text-primary">
-            PROVIDER DASHBOARD
+            DOCTOR DASHBOARD
           </p>
 
           <h1 className="text-2xl font-bold tracking-tight text-slate-800 md:text-3xl">

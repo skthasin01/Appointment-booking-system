@@ -21,7 +21,7 @@ const RequireAuth = ({ children }) => {
   }
 
   if (!isCustomer) {
-    return <Navigate to="/provider/dashboard" replace />;
+    return <Navigate to="/doctor/dashboard" replace />;
   }
 
   return children;
