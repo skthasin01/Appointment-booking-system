@@ -11,7 +11,6 @@ class DoctorCreate(BaseModel):
     specialty: str = Field(min_length=2, max_length=100)
     bio: str | None = None
     consultation_fee: int = Field(ge=0, default=0)
-    image_url: str | None = None
 
 
 class DoctorUpdate(BaseModel):
@@ -20,7 +19,6 @@ class DoctorUpdate(BaseModel):
     specialty: str | None = Field(default=None, min_length=2, max_length=100)
     bio: str | None = None
     consultation_fee: int | None = Field(default=None, ge=0)
-    image_url: str | None = None
     is_available: bool | None = None
 
 
@@ -29,6 +27,7 @@ class DoctorResponse(BaseModel):
     user_id: int
     name: str
     email: str
+    phone: str
     specialty: str
     bio: str | None
     consultation_fee: int
