@@ -38,3 +38,20 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+class UserUpdate(BaseModel):
+    name: str | None = Field(None, min_length=2, max_length=100)
+    phone: str | None = Field(None, max_length=20)
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=6, max_length=72) 
+
+
+class AdminUserUpdate(BaseModel):
+    name: str | None = Field(None, min_length=2, max_length=100)
+    email: EmailStr | None = None
+    phone: str | None = Field(None, max_length=20)
+    role: UserRole | None = None
+    is_active: bool | None = None
