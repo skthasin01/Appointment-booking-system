@@ -1,9 +1,9 @@
 import enum
 from datetime import date, datetime, time
 
+from database import Base
 from sqlalchemy import (
     Boolean,
-    Column,
     Date,
     DateTime,
     Enum,
@@ -15,8 +15,6 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from database import Base
 
 
 class UserRole(str, enum.Enum):
@@ -62,6 +60,9 @@ class Doctor(Base):
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), unique=True, nullable=False
     )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     specialty: Mapped[str] = mapped_column(String(100), nullable=True)
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     consultation_fee: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -75,7 +76,7 @@ class Doctor(Base):
     schedules: Mapped[list["DoctorSchedule"]] = relationship(
         "DoctorSchedule", back_populates="doctor", cascade="all, delete-orphan"
     )
-    appointment: Mapped[list["Appointment"]] = relationship(
+    appointments: Mapped[list["Appointment"]] = relationship(
         "Appointment", back_populates="doctor"
     )
 
