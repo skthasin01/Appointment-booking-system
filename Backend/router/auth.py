@@ -11,11 +11,8 @@ from sqlalchemy.orm import Session
 import models
 from database import get_db
 from schemas.user import (
-    AdminUserCreate,
-    LoginResponse,
-    UserLogin,
-    UserRegister,
-    UserResponse,
+    AdminUserCreate, AdminUserUpdate, LoginResponse, PasswordChange,
+    UserLogin, UserRegister, UserResponse, UserUpdate,
 )
 
 load_dotenv()
@@ -148,6 +145,22 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
+@router.post("/change-password")
+def change_password(
+    data: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if not verify_password(data.current_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if data.current_password == data.new_password:
+        raise HTTPException(status_code=400, detail="New password must be different")
+
+    current_user.password_hash = hash_password(data.new_password)
+    db.commit()
+    return {"message": "Password updated"}
+
+
 @router.post("/token", include_in_schema=False)
 def token_login(
     form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
@@ -170,3 +183,5 @@ def token_login(
 @router.get("/me", response_model=UserResponse)
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
