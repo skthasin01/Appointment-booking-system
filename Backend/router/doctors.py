@@ -1,10 +1,11 @@
+import os
+import shutil
+import uuid
 from datetime import date, datetime, timedelta
-
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
 
 import models
 from database import get_db
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from router.auth import get_current_user, hash_password
 from schemas.doctor import (
     DoctorCreate,
@@ -14,8 +15,13 @@ from schemas.doctor import (
     ScheduleResponse,
     SlotResponse,
 )
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/doctors", tags=["Doctors"])
+
+UPLOAD_DIR = "uploads/doctors"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", "png", ".webp"}
 
 
 @router.post("", response_model=DoctorResponse, status_code=status.HTTP_201_CREATED)
@@ -48,6 +54,9 @@ def create_doctor(
 
     doctor = models.Doctor(
         user_id=user.id,
+        name=data.name,
+        email=data.email,
+        phone=data.phone,
         specialty=data.specialty,
         bio=data.bio,
         consultation_fee=data.consultation_fee,
@@ -59,13 +68,72 @@ def create_doctor(
     return doctor
 
 
+@router.post("/{doctor_id}/image", response_model=DoctorResponse)
+def upload_doctor_image(
+    doctor_id: int,
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if current_user.role not in (models.UserRole.ADMIN, models.UserRole.DOCTOR):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not permitted to upload doctor image",
+        )
+
+    doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
+    if not doctor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found"
+        )
+
+    if (
+        current_user.role == models.UserRole.DOCTOR
+        and doctor.user_id != current_user.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only upload your own image",
+        )
+
+    ext = os.path.splitext(image.filename or "")[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only .jpg, .jpeg, .png, .webp images are allowed",
+        )
+
+    filename = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    doctor.image_url = f"/uploads/doctors/{filename}"
+
+    db.commit()
+    db.refresh(doctor)
+
+    return doctor
+
+
 @router.get("", response_model=list[DoctorResponse])
 def doctors_list(
-    db: Session = Depends(get_db), specialty: str | None = Query(default=None)
+    name: str | None = Query(default=None),
+    specialty: str | None = Query(default=None),
+    max_fee: int | None = Query(default=None, ge=0),
+    is_available: bool | None = Query(default=None),
+    db: Session = Depends(get_db),
 ):
-    query = db.query(models.Doctor).filter(models.Doctor.is_available.is_(True))
+    query = db.query(models.Doctor)
+
+    if name:
+        query = query.filter(models.User.name.ilike(f"%{name}%"))
     if specialty:
         query = query.filter(models.Doctor.specialty.ilike(f"%{specialty}%"))
+    if max_fee is not None:
+        query = query.filter(models.Doctor.consultation_fee <= max_fee)
+    if is_available is not None:
+        query = query.filter(models.Doctor.is_available.is_(is_available))
 
     return query.all()
 
@@ -101,6 +169,7 @@ def update_doctor(
         )
 
     if data.name is not None:
+        doctor.name = data.name
         doctor.user.name = data.name
     if data.phone is not None:
         doctor.user.phone = data.phone
@@ -110,8 +179,6 @@ def update_doctor(
         doctor.bio = data.bio
     if data.consultation_fee is not None:
         doctor.consultation_fee = data.consultation_fee
-    if data.image_url is not None:
-        doctor.image_url = data.image_url
     if data.is_available is not None:
         doctor.is_available = data.is_available
 
@@ -121,7 +188,7 @@ def update_doctor(
     return doctor
 
 
-@router.delete("/{doctor_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{doctor_id}")
 def delete_doctor(
     doctor_id: int,
     db: Session = Depends(get_db),
