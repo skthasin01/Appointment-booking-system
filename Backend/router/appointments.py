@@ -61,11 +61,13 @@ def book_appointment(
             detail="Doctor not found or unavailable",
         )
 
+    day_enum = models.DayOfWeek(data.appointment_date.strftime("%a").lower())
+
     schedule = (
         db.query(models.DoctorSchedule)
         .filter(
             models.DoctorSchedule.doctor_id == data.doctor_id,
-            models.DoctorSchedule.day_of_week == data.appointment_date.weekday(),
+            models.DoctorSchedule.day_of_week == day_enum,
             models.DoctorSchedule.is_active.is_(True),
             models.DoctorSchedule.start_time <= data.start_time,
             models.DoctorSchedule.end_time >= data.end_time,

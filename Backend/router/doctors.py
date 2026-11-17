@@ -21,7 +21,7 @@ router = APIRouter(prefix="/doctors", tags=["Doctors"])
 
 UPLOAD_DIR = "uploads/doctors"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", "png", ".webp"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 @router.post("", response_model=DoctorResponse, status_code=status.HTTP_201_CREATED)
@@ -52,6 +52,8 @@ def create_doctor(
     db.add(user)
     db.flush()
 
+    cancellation_fee = 0 if data.free_cancellation else data.cancellation_fee
+
     doctor = models.Doctor(
         user_id=user.id,
         name=data.name,
@@ -59,6 +61,12 @@ def create_doctor(
         phone=data.phone,
         specialty=data.specialty,
         bio=data.bio,
+        location=data.location,
+        experience_years=data.experience_years,
+        rating=data.rating,
+        reviews_count=data.reviews_count,
+        free_cancellation=data.free_cancellation,
+        cancellation_fee=cancellation_fee,
         consultation_fee=data.consultation_fee,
     )
     db.add(doctor)
@@ -120,6 +128,7 @@ def upload_doctor_image(
 def doctors_list(
     name: str | None = Query(default=None),
     specialty: str | None = Query(default=None),
+    location: str | None = Query(default=None),
     max_fee: int | None = Query(default=None, ge=0),
     is_available: bool | None = Query(default=None),
     db: Session = Depends(get_db),
@@ -127,9 +136,11 @@ def doctors_list(
     query = db.query(models.Doctor)
 
     if name:
-        query = query.filter(models.User.name.ilike(f"%{name}%"))
+        query = query.filter(models.Doctor.name.ilike(f"%{name}%"))
     if specialty:
         query = query.filter(models.Doctor.specialty.ilike(f"%{specialty}%"))
+    if location:
+        query = query.filter(models.Doctor.location.ilike(f"%{location}%"))
     if max_fee is not None:
         query = query.filter(models.Doctor.consultation_fee <= max_fee)
     if is_available is not None:
@@ -172,11 +183,26 @@ def update_doctor(
         doctor.name = data.name
         doctor.user.name = data.name
     if data.phone is not None:
+        doctor.phone = data.phone
         doctor.user.phone = data.phone
     if data.specialty is not None:
         doctor.specialty = data.specialty
     if data.bio is not None:
         doctor.bio = data.bio
+    if data.location is not None:
+        doctor.location = data.location
+    if data.experience_years is not None:
+        doctor.experience_years = data.experience_years
+    if data.rating is not None:
+        doctor.rating = data.rating
+    if data.reviews_count is not None:
+        doctor.reviews_count = data.reviews_count
+    if data.free_cancellation is not None:
+        doctor.free_cancellation = data.free_cancellation
+    if data.cancellation_fee is not None:
+        doctor.cancellation_fee = data.cancellation_fee
+    if doctor.free_cancellation:
+        doctor.cancellation_fee = 0
     if data.consultation_fee is not None:
         doctor.consultation_fee = data.consultation_fee
     if data.is_available is not None:
@@ -215,6 +241,22 @@ def delete_doctor(
     db.commit()
 
     return {"message": "Doctor deleted"}
+
+
+@router.get("/{doctor_id}/schedule", response_model=list[ScheduleResponse])
+def get_doctor_schedule(doctor_id: int, db: Session = Depends(get_db)):
+    doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
+    if not doctor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found"
+        )
+
+    return (
+        db.query(models.DoctorSchedule)
+        .filter(models.DoctorSchedule.doctor_id == doctor_id)
+        .order_by(models.DoctorSchedule.day_of_week.asc())
+        .all()
+    )
 
 
 @router.put("/{doctor_id}/schedule", response_model=list[ScheduleResponse])
@@ -287,11 +329,13 @@ def get_available_slots(
             detail="Doctor not found or unavailable",
         )
 
+    day_enum = models.DayOfWeek(target_date.strftime("%a").lower())
+
     schedules = (
         db.query(models.DoctorSchedule)
         .filter(
             models.DoctorSchedule.doctor_id == doctor_id,
-            models.DoctorSchedule.day_of_week == target_date.weekday(),
+            models.DoctorSchedule.day_of_week == day_enum,
             models.DoctorSchedule.is_active.is_(True),
         )
         .all()

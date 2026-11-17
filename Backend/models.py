@@ -7,6 +7,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -30,6 +31,16 @@ class AppointmentStatus(str, enum.Enum):
     IN_CONSULTATION = "in_consultation"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
+
+
+class DayOfWeek(str, enum.Enum):
+    MON = "mon"
+    TUE = "tue"
+    WED = "wed"
+    THU = "thu"
+    FRI = "fri"
+    SAT = "sat"
+    SUN = "sun"
 
 
 class User(Base):
@@ -65,6 +76,16 @@ class Doctor(Base):
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     specialty: Mapped[str] = mapped_column(String(100), nullable=True)
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    location: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    experience_years: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    rating: Mapped[float] = mapped_column(Float, nullable=False, default=5.0)
+    reviews_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    free_cancellation: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
+    cancellation_fee: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     consultation_fee: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -88,9 +109,7 @@ class DoctorSchedule(Base):
     doctor_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("doctors.id"), nullable=False, index=True
     )
-    day_of_week: Mapped[int] = mapped_column(
-        Integer, nullable=False
-    )  # starts from monday: 0 = monday ... 6 = sunday
+    day_of_week: Mapped[DayOfWeek] = mapped_column(Enum(DayOfWeek), nullable=False)
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     slot_duration_minutes: Mapped[int] = mapped_column(
