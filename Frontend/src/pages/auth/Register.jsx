@@ -87,7 +87,7 @@ const Register = () => {
       toast.success('Account created successfully');
 
       if (user.role === 'provider') {
-        navigate('/provider/dashboard', { replace: true });
+        navigate('/doctor/dashboard', { replace: true });
       } else {
         navigate('/', { replace: true });
       }

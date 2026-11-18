@@ -9,11 +9,11 @@ import {
 } from "react-icons/fa";
 
 const menuItems = [
-  { name: "Dashboard", icon: FaHome, path: "/provider/dashboard" },
-  { name: "Appointments", icon: FaCalendarCheck, path: "/provider/appointments" },
-  { name: "My Schedule", icon: FaCalendarAlt, path: "/provider/schedule" },
-  { name: "My Services", icon: FaBriefcase, path: "/provider/services" },
-  { name: "My Profile", icon: FaUser, path: "/provider/profile" },
+  { name: "Dashboard", icon: FaHome, path: "/doctor/dashboard" },
+  { name: "Appointments", icon: FaCalendarCheck, path: "/doctor/appointments" },
+  { name: "My Schedule", icon: FaCalendarAlt, path: "/doctor/schedule" },
+  { name: "My Services", icon: FaBriefcase, path: "/doctor/services" },
+  { name: "My Profile", icon: FaUser, path: "/doctor/profile" },
 ];
 
 export default function Sidebar() {
@@ -25,7 +25,7 @@ export default function Sidebar() {
           Appoint<span className="text-slate-800">Ease</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Provider Dashboard
+          Doctor Dashboard
         </p>
       </div>
 

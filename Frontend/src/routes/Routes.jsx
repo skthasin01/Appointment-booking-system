@@ -7,16 +7,18 @@ import RouteError from '../components/common/RouteError';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 
 import Home from '../pages/public/Home';
+import Doctors from '../pages/public/Doctors';
+import DoctorDetails from '../pages/public/DoctorDetails';
 import About from '../pages/public/About';
 import Contact from '../pages/public/Contact';
 import NotFound from '../pages/public/NotFound';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 
-import Dashboard from '../pages/provider/Dashboard';
-import Appointments from '../pages/provider/Appointments';
-import ManageSchedule from '../pages/provider/ManageSchedule';
-import Services from '../pages/provider/Services';
+import Dashboard from '../pages/doctor/Dashboard';
+import Appointments from '../pages/doctor/Appointments';
+import ManageSchedule from '../pages/doctor/ManageSchedule';
+import Services from '../pages/doctor/Services';
 
 const PublicLayout = () => (
   <>
@@ -36,12 +38,12 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: '/providers',
-        element: <h1>Providers Page</h1>,
+        path: '/doctors',
+        element: <Doctors />,
       },
       {
-        path: '/providers/:id',
-        element: <h1>Provider Details Page</h1>,
+        path: '/doctors/:id',
+        element: <DoctorDetails />,
       },
       {
         path: '/about',
@@ -74,10 +76,14 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: '/provider',
+    path: '/doctor',
     element: <DashboardLayout />,
     errorElement: <RouteError />,
     children: [
+      {
+        index: true,
+        element: <Dashboard />,
+      },
       {
         path: 'dashboard',
         element: <Dashboard />,

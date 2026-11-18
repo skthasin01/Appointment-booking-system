@@ -6,6 +6,7 @@ import {
   FaBone,
   FaBrain,
   FaCalendarCheck,
+  FaClock,
   FaEye,
   FaHeartbeat,
   FaSearch,
@@ -17,38 +18,46 @@ import {
   FaUserMd,
 } from 'react-icons/fa';
 
-import ProviderCard from '../../components/common/ProviderCard';
+import BookNowButton from '../../components/booking/BookNowButton';
+import DoctorCard from '../../components/doctor/DoctorCard';
+import DoctorPhoto from '../../components/doctor/DoctorPhoto';
 import SelectInput from '../../components/form/SelectInput';
-import TextInput from '../../components/form/TextInput';
+import {
+  cities,
+  doctors,
+  formatDate,
+  formatFee,
+  formatTime,
+  getFeaturedDoctor,
+  specialties,
+  topRatedDoctors,
+} from '../../data/doctors';
 
-const specialties = [
-  { name: 'Cardiology', icon: FaHeartbeat },
-  { name: 'Neurology', icon: FaBrain },
-  { name: 'Orthopedics', icon: FaBone },
-  { name: 'Pediatrics', icon: FaBaby },
-  { name: 'Dentistry', icon: FaTooth },
-  { name: 'Eye Care', icon: FaEye },
-  { name: 'General Medicine', icon: FaStethoscope },
-  { name: 'Family Medicine', icon: FaUserMd },
-];
+const specialtyIcons = {
+  Cardiology: FaHeartbeat,
+  Neurology: FaBrain,
+  Orthopedics: FaBone,
+  Pediatrics: FaBaby,
+  Dentistry: FaTooth,
+  'Eye Care': FaEye,
+  'General Medicine': FaStethoscope,
+  'Family Medicine': FaUserMd,
+};
 
-const stats = [
-  { value: '500+', label: 'Verified doctors', icon: FaUserCheck },
-  { value: '40+', label: 'Specialties', icon: FaStethoscope },
-  { value: '12k+', label: 'Appointments booked', icon: FaCalendarCheck },
-  { value: '4.9', label: 'Average rating', icon: FaStar },
-];
+const averageRating = (
+  doctors.reduce((total, doctor) => total + doctor.rating, 0) / doctors.length
+).toFixed(1);
 
 const steps = [
   {
     icon: FaSearch,
     title: 'Find your doctor',
-    text: 'Search by specialty, location, or name and compare verified profiles.',
+    text: 'Search by specialty, city, or name and compare verified profiles.',
   },
   {
     icon: FaCalendarCheck,
     title: 'Pick a time',
-    text: 'Choose a service and a free slot from the doctor\u2019s live schedule.',
+    text: 'Choose a free date and time slot from the doctor\u2019s schedule.',
   },
   {
     icon: FaUserCheck,
@@ -57,55 +66,15 @@ const steps = [
   },
 ];
 
-const doctors = [
-  {
-    id: 1,
-    name: 'Dr. Ayesha Rahman',
-    specialty: 'Cardiology',
-    location: 'Dhaka',
-    rating: 4.9,
-    reviews: 128,
-    fee: 800,
-    initials: 'AR',
-  },
-  {
-    id: 2,
-    name: 'Dr. Tanvir Hasan',
-    specialty: 'Neurology',
-    location: 'Chattogram',
-    rating: 4.8,
-    reviews: 96,
-    fee: 1000,
-    initials: 'TH',
-  },
-  {
-    id: 3,
-    name: 'Dr. Farzana Akter',
-    specialty: 'Pediatrics',
-    location: 'Khulna',
-    rating: 4.9,
-    reviews: 154,
-    fee: 600,
-    initials: 'FA',
-  },
-  {
-    id: 4,
-    name: 'Dr. Imran Chowdhury',
-    specialty: 'Orthopedics',
-    location: 'Sylhet',
-    rating: 4.7,
-    reviews: 82,
-    fee: 900,
-    initials: 'IC',
-  },
-];
-
-const slots = ['09:00 AM', '10:30 AM', '11:15 AM', '02:00 PM', '03:30 PM', '04:45 PM'];
-
 const Home = () => {
   const navigate = useNavigate();
   const [specialty, setSpecialty] = useState('');
-  const [location, setLocation] = useState('');
+  const [city, setCity] = useState('');
+
+  const spotlight = getFeaturedDoctor();
+  const featured = topRatedDoctors(4);
+  const heroTimes = spotlight.availableTimes.slice(0, 6);
+  const [heroSlot, setHeroSlot] = useState(() => heroTimes[1] || heroTimes[0] || '');
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -114,13 +83,20 @@ const Home = () => {
     if (specialty) {
       params.set('specialty', specialty);
     }
-    if (location.trim()) {
-      params.set('location', location.trim());
+    if (city) {
+      params.set('city', city);
     }
 
     const query = params.toString();
-    navigate(query ? `/providers?${query}` : '/providers');
+    navigate(query ? `/doctors?${query}` : '/doctors');
   };
+
+  const stats = [
+    { value: `${doctors.length}`, label: 'Verified doctors', icon: FaUserCheck },
+    { value: `${specialties.length}`, label: 'Specialties', icon: FaStethoscope },
+    { value: '12k+', label: 'Appointments booked', icon: FaCalendarCheck },
+    { value: averageRating, label: 'Average rating', icon: FaStar },
+  ];
 
   return (
     <div>
@@ -149,24 +125,27 @@ const Home = () => {
                   aria-label="Specialty"
                   value={specialty}
                   onChange={(event) => setSpecialty(event.target.value)}
-                  className="border-transparent"
                 >
                   <option value="">All specialties</option>
                   {specialties.map((item) => (
-                    <option key={item.name} value={item.name}>
-                      {item.name}
+                    <option key={item} value={item}>
+                      {item}
                     </option>
                   ))}
                 </SelectInput>
 
-                <TextInput
-                  aria-label="City or area"
-                  type="text"
-                  value={location}
-                  onChange={(event) => setLocation(event.target.value)}
-                  placeholder="City or area"
-                  className="border-transparent"
-                />
+                <SelectInput
+                  aria-label="City"
+                  value={city}
+                  onChange={(event) => setCity(event.target.value)}
+                >
+                  <option value="">All cities</option>
+                  {cities.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </SelectInput>
 
                 <button type="submit" className="btn btn-primary w-full sm:w-auto">
                   <FaSearch />
@@ -194,15 +173,13 @@ const Home = () => {
           <div className="card border border-base-300 bg-base-100 shadow-sm">
             <div className="card-body gap-5 p-6">
               <div className="flex items-center gap-4">
-                <span className="flex h-14 w-14 flex-none items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-                  AR
-                </span>
-                <div className="flex-1">
-                  <p className="font-semibold text-base-content">
-                    Dr. Ayesha Rahman
+                <DoctorPhoto doctor={spotlight} size="md" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-base-content">
+                    {spotlight.name}
                   </p>
-                  <p className="text-sm text-base-content/60">
-                    Cardiologist · Dhaka
+                  <p className="truncate text-sm text-base-content/60">
+                    {spotlight.specialty} · {spotlight.city}
                   </p>
                 </div>
                 <span className="badge badge-soft badge-success rounded-full">
@@ -211,28 +188,69 @@ const Home = () => {
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-                  Today&apos;s slots
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
+                    Next slots
+                  </p>
+                  <p className="text-xs text-base-content/50">
+                    {formatDate(spotlight.availableDates[0])}
+                  </p>
+                </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-3">
-                  {slots.map((slot, index) => (
-                    <span
-                      key={slot}
-                      className={`rounded-lg border px-2 py-2 text-center text-xs font-medium ${
-                        index === 1
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-base-300 bg-base-200 text-base-content/70'
-                      }`}
-                    >
-                      {slot}
-                    </span>
-                  ))}
+                  {heroTimes.map((slot) => {
+                    const isSelected = heroSlot === slot;
+
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setHeroSlot(slot)}
+                        aria-pressed={isSelected}
+                        className={`rounded-lg border px-2 py-2 text-center text-xs font-medium transition-colors ${
+                          isSelected
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-base-300 bg-base-200 text-base-content/70 hover:border-primary/40 hover:bg-base-100'
+                        }`}
+                      >
+                        {formatTime(slot)}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
+              <div className="flex items-center justify-between rounded-xl bg-base-200 p-3 text-sm text-base-content/70">
+                <span className="inline-flex items-center gap-2">
+                  <FaClock className="text-primary" />
+                  {formatFee(spotlight.visitCost)} per visit
+                  {heroSlot && (
+                    <span className="text-base-content/40">
+                      · {formatTime(heroSlot)}
+                    </span>
+                  )}
+                </span>
+                <BookNowButton
+                  doctor={spotlight}
+                  initialDate={spotlight.availableDates[0]}
+                  initialTime={heroSlot}
+                  className="btn btn-primary btn-sm"
+                  label="Book"
+                />
+              </div>
+
               <div className="flex items-center gap-2 rounded-xl bg-base-200 p-3 text-sm text-base-content/70">
-                <FaShieldAlt className="text-primary" />
-                Free cancellation up to 2 hours before
+                {spotlight.cancellation ? (
+                  <>
+                    <FaShieldAlt className="flex-none text-primary" />
+                    Free cancellation up to {spotlight.cancellationHours} hours
+                    before
+                  </>
+                ) : (
+                  <>
+                    <FaShieldAlt className="flex-none text-base-content/40" />
+                    Cancellation is not available for this doctor
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -310,7 +328,7 @@ const Home = () => {
             </h2>
           </div>
           <Link
-            to="/providers"
+            to="/doctors"
             className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3"
           >
             View all doctors <FaArrowRight className="text-xs" />
@@ -318,22 +336,32 @@ const Home = () => {
         </div>
 
         <div className="mt-10 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-          {specialties.map((item) => (
-            <Link
-              key={item.name}
-              to={`/providers?specialty=${encodeURIComponent(item.name)}`}
-              className="card border border-base-300 bg-base-100 shadow-sm transition-colors hover:bg-base-200"
-            >
-              <div className="card-body items-center gap-3 p-5 text-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-lg text-primary">
-                  <item.icon />
-                </span>
-                <p className="text-sm font-semibold text-base-content">
-                  {item.name}
-                </p>
-              </div>
-            </Link>
-          ))}
+          {specialties.map((name) => {
+            const Icon = specialtyIcons[name] || FaStethoscope;
+            const count = doctors.filter(
+              (doctor) => doctor.specialty === name
+            ).length;
+
+            return (
+              <Link
+                key={name}
+                to={`/doctors?specialty=${encodeURIComponent(name)}`}
+                className="card border border-base-300 bg-base-100 shadow-sm transition-colors hover:bg-base-200"
+              >
+                <div className="card-body items-center gap-3 p-5 text-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-lg text-primary">
+                    <Icon />
+                  </span>
+                  <p className="text-sm font-semibold text-base-content">
+                    {name}
+                  </p>
+                  <p className="text-xs text-base-content/50">
+                    {count} doctors
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -349,16 +377,16 @@ const Home = () => {
               </h2>
             </div>
             <Link
-              to="/providers"
+              to="/doctors"
               className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3"
             >
               View all doctors <FaArrowRight className="text-xs" />
             </Link>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {doctors.map((doctor) => (
-              <ProviderCard key={doctor.id} provider={doctor} />
+          <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {featured.map((doctor) => (
+              <DoctorCard key={doctor.id} doctor={doctor} />
             ))}
           </div>
         </div>
@@ -378,7 +406,7 @@ const Home = () => {
               <Link to="/register" className="btn btn-primary">
                 Create free account
               </Link>
-              <Link to="/providers" className="btn btn-ghost">
+              <Link to="/doctors" className="btn btn-ghost">
                 Browse doctors
               </Link>
             </div>

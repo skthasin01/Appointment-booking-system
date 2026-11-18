@@ -54,7 +54,7 @@ const Login = () => {
       toast.success(`Welcome back, ${user.name.split(' ')[0]}`);
 
       if (user.role === 'provider') {
-        navigate('/provider/dashboard', { replace: true });
+        navigate('/doctor/dashboard', { replace: true });
       } else {
         navigate(location.state?.from || '/', { replace: true });
       }

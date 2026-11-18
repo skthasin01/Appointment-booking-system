@@ -32,7 +32,7 @@ const Footer = () => {
 
           <p className="max-w-xs text-sm leading-7 text-slate-500">
             Making appointment booking simple, convenient and stress-free.
-            Connect with trusted providers and book your appointments with ease.
+            Connect with trusted doctors and book your appointments with ease.
           </p>
 
           {/* Social Links */}
@@ -64,7 +64,7 @@ const Footer = () => {
           <ul className="space-y-3 text-sm">
             {[
               { name: 'Home', path: '/' },
-              { name: 'Find Providers', path: '/providers' },
+              { name: 'Find Doctors', path: '/doctors' },
               { name: 'About Us', path: '/about' },
               { name: 'Contact Us', path: '/contact' },
             ].map((link) => (
@@ -98,8 +98,8 @@ const Footer = () => {
               </Link>
             </li>
             <li>
-              <Link to="/provider/dashboard" className="transition hover:text-primary">
-                Provider Dashboard
+              <Link to="/doctor/dashboard" className="transition hover:text-primary">
+                Doctor Dashboard
               </Link>
             </li>
           </ul>
