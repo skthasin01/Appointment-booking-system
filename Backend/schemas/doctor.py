@@ -12,6 +12,14 @@ class ScheduleItem(BaseModel):
     is_active: bool = True
 
 
+class ScheduleUpdate(BaseModel):
+    day_of_week: DayOfWeek | None = None
+    start_time: time | None = None
+    end_time: time | None = None
+    slot_duration_minutes: int | None = Field(default=None, ge=10, le=120)
+    is_active: bool | None = None
+
+
 class ScheduleResponse(BaseModel):
     id: int
     day_of_week: DayOfWeek
