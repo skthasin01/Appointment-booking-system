@@ -15,7 +15,11 @@ from sqlalchemy.orm import Session
 router = APIRouter(prefix="/doctors", tags=["Schedules"])
 
 
-@router.get("/{doctor_id}/schedule", response_model=list[ScheduleResponse])
+@router.get(
+    "/{doctor_id}/schedule",
+    response_model=list[ScheduleResponse],
+    summary="[Public / Admin / Doctor] Get Doctor Weekly Schedule",
+)
 def get_doctor_schedule(doctor_id: int, db: Session = Depends(get_db)):
     doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
     if not doctor:
@@ -31,7 +35,11 @@ def get_doctor_schedule(doctor_id: int, db: Session = Depends(get_db)):
     )
 
 
-@router.put("/{doctor_id}/schedule", response_model=list[ScheduleResponse])
+@router.put(
+    "/{doctor_id}/schedule",
+    response_model=list[ScheduleResponse],
+    summary="[Admin / Doctor] Replace Full Weekly Schedule",
+)
 def set_doctor_schedule(
     doctor_id: int,
     items: list[ScheduleItem],
@@ -58,12 +66,19 @@ def set_doctor_schedule(
             detail="You can update your own schedule",
         )
 
+    seen_days = set()
     for item in items:
         if item.start_time >= item.end_time:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="start time must be before end time",
             )
+        if item.day_of_week in seen_days:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Duplicate schedule for {item.day_of_week.value}",
+            )
+        seen_days.add(item.day_of_week)
 
     db.query(models.DoctorSchedule).filter(
         models.DoctorSchedule.doctor_id == doctor_id
@@ -84,6 +99,7 @@ def set_doctor_schedule(
     "/{doctor_id}/schedule",
     response_model=ScheduleResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="[Admin / Doctor] Add Single Day Schedule",
 )
 def add_doctor_schedule(
     doctor_id: int,
@@ -140,7 +156,11 @@ def add_doctor_schedule(
     return schedule
 
 
-@router.patch("/{doctor_id}/schedule/{schedule_id}", response_model=ScheduleResponse)
+@router.patch(
+    "/{doctor_id}/schedule/{schedule_id}",
+    response_model=ScheduleResponse,
+    summary="[Admin / Doctor] Update Single Schedule",
+)
 def update_single_schedule(
     doctor_id: int,
     schedule_id: int,
@@ -218,7 +238,10 @@ def update_single_schedule(
     return schedule
 
 
-@router.delete("/{doctor_id}/schedule/{schedule_id}")
+@router.delete(
+    "/{doctor_id}/schedule/{schedule_id}",
+    summary="[Admin / Doctor] Delete Single Schedule",
+)
 def delete_single_schedule(
     doctor_id: int,
     schedule_id: int,
@@ -264,7 +287,11 @@ def delete_single_schedule(
     return {"message": "Schedule deleted"}
 
 
-@router.get("/{doctor_id}/slots", response_model=list[SlotResponse])
+@router.get(
+    "/{doctor_id}/slots",
+    response_model=list[SlotResponse],
+    summary="[Public] Get Available Time Slots",
+)
 def get_available_slots(
     doctor_id: int, target_date: date = Query(...), db: Session = Depends(get_db)
 ):

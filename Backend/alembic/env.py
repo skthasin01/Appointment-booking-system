@@ -2,12 +2,12 @@ import os
 import sys
 from logging.config import fileConfig
 
+from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
-from alembic import context
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 load_dotenv()
 
@@ -58,6 +58,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        render_as_batch=True,
+        compare_type=True,
     )
 
     with context.begin_transaction():
@@ -79,7 +81,10 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata, render_as_batch=True
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=True,
+            compare_type=True,
         )
 
         with context.begin_transaction():

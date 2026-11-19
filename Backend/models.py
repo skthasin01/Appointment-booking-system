@@ -100,6 +100,9 @@ class Doctor(Base):
     appointments: Mapped[list["Appointment"]] = relationship(
         "Appointment", back_populates="doctor"
     )
+    reviews: Mapped[list["Review"]] = relationship(
+        "Review", back_populates="doctor", cascade="all, delete-orphan"
+    )
 
 
 class DoctorSchedule(Base):
@@ -137,9 +140,37 @@ class Appointment(Base):
         Enum(AppointmentStatus), nullable=False, default=AppointmentStatus.CONFIRMED
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prescription_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 
     patient: Mapped["User"] = relationship("User", foreign_keys=[patient_id])
     doctor: Mapped["Doctor"] = relationship("Doctor", back_populates="appointments")
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    appointment_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("appointments.id"), unique=True, nullable=False
+    )
+    patient_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False, index=True
+    )
+    doctor_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("doctors.id"), nullable=False, index=True
+    )
+    communication: Mapped[int] = mapped_column(Integer, nullable=False)
+    behavior: Mapped[int] = mapped_column(Integer, nullable=False)
+    punctuality: Mapped[int] = mapped_column(Integer, nullable=False)
+    treatment_effectiveness: Mapped[int] = mapped_column(Integer, nullable=False)
+    rating: Mapped[float] = mapped_column(Float, nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    patient: Mapped["User"] = relationship("User", foreign_keys=[patient_id])
+    doctor: Mapped["Doctor"] = relationship("Doctor", back_populates="reviews")

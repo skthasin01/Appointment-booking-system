@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from typing import Literal
 
 from models import UserRole
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserRegister(BaseModel):
@@ -15,7 +16,7 @@ class AdminUserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6, max_length=72)
     phone: str | None = Field(default=None, max_length=20)
-    role: UserRole = UserRole.PATIENT
+    role: Literal["patient", "receptionist", "admin"] = "patient"
 
 
 class UserLogin(BaseModel):
@@ -39,6 +40,7 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+
 class UserUpdate(BaseModel):
     name: str | None = Field(None, min_length=2, max_length=100)
     phone: str | None = Field(None, max_length=20)
@@ -46,7 +48,7 @@ class UserUpdate(BaseModel):
 
 class PasswordChange(BaseModel):
     current_password: str
-    new_password: str = Field(min_length=6, max_length=72) 
+    new_password: str = Field(min_length=6, max_length=72)
 
 
 class AdminUserUpdate(BaseModel):

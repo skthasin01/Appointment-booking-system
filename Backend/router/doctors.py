@@ -20,7 +20,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
-@router.post("", response_model=DoctorResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=DoctorResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="[Admin] Create Doctor",
+)
 def create_doctor(
     data: DoctorCreate,
     db: Session = Depends(get_db),
@@ -72,7 +77,11 @@ def create_doctor(
     return doctor
 
 
-@router.post("/{doctor_id}/image", response_model=DoctorResponse)
+@router.post(
+    "/{doctor_id}/image",
+    response_model=DoctorResponse,
+    summary="[Admin] Upload Doctor Image",
+)
 def upload_doctor_image(
     doctor_id: int,
     image: UploadFile = File(...),
@@ -82,7 +91,7 @@ def upload_doctor_image(
     if current_user.role not in (models.UserRole.ADMIN, models.UserRole.DOCTOR):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not permitted to upload doctor image",
+            detail="Only admin or the doctor can upload an image",
         )
 
     doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
@@ -120,7 +129,9 @@ def upload_doctor_image(
     return doctor
 
 
-@router.get("", response_model=list[DoctorResponse])
+@router.get(
+    "", response_model=list[DoctorResponse], summary="[Public] List & Filter Doctor"
+)
 def doctors_list(
     name: str | None = Query(default=None),
     specialty: str | None = Query(default=None),
@@ -145,7 +156,9 @@ def doctors_list(
     return query.all()
 
 
-@router.get("/{doctor_id}", response_model=DoctorResponse)
+@router.get(
+    "/{doctor_id}", response_model=DoctorResponse, summary="[Public] Get Doctor Details"
+)
 def get_individual_doctor(doctor_id: int, db: Session = Depends(get_db)):
     doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
     if not doctor:
@@ -156,7 +169,9 @@ def get_individual_doctor(doctor_id: int, db: Session = Depends(get_db)):
     return doctor
 
 
-@router.put("/{doctor_id}", response_model=DoctorResponse)
+@router.put(
+    "/{doctor_id}", response_model=DoctorResponse, summary="[Admin] Update Doctor"
+)
 def update_doctor(
     doctor_id: int,
     data: DoctorUpdate,
@@ -210,7 +225,7 @@ def update_doctor(
     return doctor
 
 
-@router.delete("/{doctor_id}")
+@router.delete("/{doctor_id}", summary="[Admin] Delete Doctor")
 def delete_doctor(
     doctor_id: int,
     db: Session = Depends(get_db),

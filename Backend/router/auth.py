@@ -3,17 +3,22 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
+import models
+from database import get_db
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-
-import models
-from database import get_db
 from schemas.user import (
-    AdminUserCreate, AdminUserUpdate, LoginResponse, PasswordChange,
-    UserLogin, UserRegister, UserResponse, UserUpdate,
+    AdminUserCreate,
+    AdminUserUpdate,
+    LoginResponse,
+    PasswordChange,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+    UserUpdate,
 )
+from sqlalchemy.orm import Session
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -57,7 +62,10 @@ def get_current_user(
 
 # ---------- Routes ----------
 @router.post(
-    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+    "/register",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="[Public] Register Patient",
 )
 def register(data: UserRegister, db: Session = Depends(get_db)):
     if db.query(models.User).filter(models.User.email == data.email).first():
@@ -81,7 +89,12 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
     return user
 
 
-@router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/users",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="[Admin] Create User with Role (Patient / Receptionist / Admin)",
+)
 def admin_create_user(
     data: AdminUserCreate,
     db: Session = Depends(get_db),
@@ -104,7 +117,7 @@ def admin_create_user(
         email=data.email,
         password_hash=hash_password(data.password),
         phone=data.phone,
-        role=data.role,
+        role=models.UserRole(data.role),
     )
 
     db.add(user)
@@ -114,7 +127,9 @@ def admin_create_user(
     return user
 
 
-@router.get("/users", response_model=list[UserResponse])
+@router.get(
+    "/users", response_model=list[UserResponse], summary="[Admin] List All Users"
+)
 def user_list(
     db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
@@ -128,7 +143,7 @@ def user_list(
     return users
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=LoginResponse, summary="[Public] Login")
 def login(data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == data.email).first()
     if not user or not verify_password(data.password, user.password_hash):
@@ -145,7 +160,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
-@router.post("/change-password")
+@router.post("/change-password", summary="[All Users] Change Password")
 def change_password(
     data: PasswordChange,
     db: Session = Depends(get_db),
@@ -180,8 +195,8 @@ def token_login(
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get(
+    "/me", response_model=UserResponse, summary="[Authenticated] Get Current User"
+)
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user
-
-
