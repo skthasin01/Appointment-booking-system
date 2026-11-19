@@ -6,8 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from router import appointments, auth, doctors, reviews, schedules
 
-if os.getenv("USE_CREATE_ALL", "false").lower() == "true":
-    Base.metadata.create_all(bind=engine)  # creates the database tables
+# if os.getenv("USE_CREATE_ALL", "false").lower() == "true":
+Base.metadata.create_all(bind=engine)  # creates the database tables
 
 app = FastAPI()
 
