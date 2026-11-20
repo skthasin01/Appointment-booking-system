@@ -1,75 +1,103 @@
+import { Link, NavLink, useNavigate } from "react-router";
 import {
   FaHome,
   FaCalendarCheck,
   FaCalendarAlt,
   FaBriefcase,
   FaUser,
-  FaCog,
-  FaSignOutAlt
+  FaUserMd,
+  FaGlobe,
+  FaSignOutAlt,
 } from "react-icons/fa";
+import toast from "react-hot-toast";
 
-const menuItems = [
-  { name: "Dashboard", icon: FaHome, path: "/doctor/dashboard" },
+import useAuth from "../../hooks/useAuth";
+
+const doctorMenu = [
+  { name: "Dashboard", icon: FaHome, path: "/doctor", end: true },
   { name: "Appointments", icon: FaCalendarCheck, path: "/doctor/appointments" },
   { name: "My Schedule", icon: FaCalendarAlt, path: "/doctor/schedule" },
   { name: "My Services", icon: FaBriefcase, path: "/doctor/services" },
   { name: "My Profile", icon: FaUser, path: "/doctor/profile" },
 ];
 
-export default function Sidebar() {
-  return (
-    <aside className="w-64 min-h-screen bg-white border-r border-slate-200 flex flex-col">
+const adminMenu = [
+  { name: "Dashboard", icon: FaHome, path: "/admin", end: true },
+  { name: "Appointments", icon: FaCalendarCheck, path: "/admin/appointments" },
+  { name: "Doctors", icon: FaUserMd, path: "/admin/doctors" },
+  { name: "My Profile", icon: FaUser, path: "/admin/profile" },
+];
 
-      <div className="p-6 border-b border-slate-100">
-        <h1 className="text-xl font-bold text-blue-600">
+const linkClass = ({ isActive }) =>
+  `flex items-center gap-3 rounded-lg px-4 py-3 transition duration-200 ${
+    isActive
+      ? "bg-blue-50 text-blue-600"
+      : "text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+  }`;
+
+export default function Sidebar({ onNavigate }) {
+  const { isAdmin, logout } = useAuth();
+  const navigate = useNavigate();
+  const menuItems = isAdmin ? adminMenu : doctorMenu;
+
+  const handleLogout = () => {
+    onNavigate?.();
+    logout();
+    toast.success("Signed out");
+    navigate("/");
+  };
+
+  return (
+    <aside className="flex min-h-screen w-64 flex-col border-r border-slate-200 bg-white">
+      <div className="border-b border-slate-100 p-6">
+        <Link to="/" onClick={onNavigate} className="text-xl font-bold text-blue-600">
           Appoint<span className="text-slate-800">Ease</span>
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Doctor Dashboard
+        </Link>
+        <p className="mt-1 text-xs text-slate-500">
+          {isAdmin ? "Admin Dashboard" : "Doctor Dashboard"}
         </p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
-
-        <p className="text-xs font-semibold text-slate-400 uppercase mb-4">
-          Menu
-        </p>
+      <nav className="flex-1 space-y-2 p-4">
+        <p className="mb-4 text-xs font-semibold uppercase text-slate-400">Menu</p>
 
         {menuItems.map((item) => {
           const Icon = item.icon;
 
           return (
-            <a
+            <NavLink
               key={item.name}
-              href={item.path}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg
-              text-slate-600 hover:bg-blue-50 hover:text-blue-600
-              transition duration-200"
+              to={item.path}
+              end={item.end}
+              onClick={onNavigate}
+              className={linkClass}
             >
               <Icon />
               <span className="text-sm font-medium">{item.name}</span>
-            </a>
+            </NavLink>
           );
         })}
-
       </nav>
 
-      <div className="p-4 border-t border-slate-100 space-y-2">
+      <div className="space-y-2 border-t border-slate-100 p-4">
+        <Link
+          to="/"
+          onClick={onNavigate}
+          className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-slate-600 hover:text-blue-600"
+        >
+          <FaGlobe />
+          Back to website
+        </Link>
 
-        <button className="flex items-center gap-3 px-4 py-3 w-full
-          text-slate-600 hover:text-blue-600 rounded-lg">
-          <FaCog />
-          Settings
-        </button>
-
-        <button className="flex items-center gap-3 px-4 py-3 w-full
-          text-red-500 hover:bg-red-50 rounded-lg">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-red-500 hover:bg-red-50"
+        >
           <FaSignOutAlt />
           Logout
         </button>
-
       </div>
-
     </aside>
   );
 }

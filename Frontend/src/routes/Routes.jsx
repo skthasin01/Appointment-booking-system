@@ -3,22 +3,38 @@ import { createBrowserRouter, Outlet } from 'react-router';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import GuestOnly from '../components/common/GuestOnly';
+import RequireAuth from '../components/common/RequireAuth';
 import RouteError from '../components/common/RouteError';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 
+// Public
 import Home from '../pages/public/Home';
-import Doctors from '../pages/public/Doctors';
-import DoctorDetails from '../pages/public/DoctorDetails';
 import About from '../pages/public/About';
 import Contact from '../pages/public/Contact';
 import NotFound from '../pages/public/NotFound';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 
+// Doctors (live API)
+import Doctors from '../pages/doctors/Doctors';
+import DoctorDetails from '../pages/doctors/DoctorDetails';
+
+// Booking & patient pages (live API)
+import Booking from '../pages/booking/Booking';
+import BookingConfirmation from '../pages/booking/BookingConfirmation';
+import MyAppointments from '../pages/user/MyAppointments';
+import Profile from '../pages/user/Profile';
+
+// Doctor dashboard
 import Dashboard from '../pages/doctor/Dashboard';
 import Appointments from '../pages/doctor/Appointments';
 import ManageSchedule from '../pages/doctor/ManageSchedule';
 import Services from '../pages/doctor/Services';
+
+// Admin dashboard (live API)
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import AdminAppointments from '../pages/admin/AdminAppointments';
+import AdminDoctors from '../pages/admin/AdminDoctors';
 
 const PublicLayout = () => (
   <>
@@ -70,6 +86,38 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: '/book/:doctorId',
+        element: (
+          <RequireAuth roles={['patient']}>
+            <Booking />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: '/booking/success',
+        element: (
+          <RequireAuth roles={['patient']}>
+            <BookingConfirmation />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: '/my-appointments',
+        element: (
+          <RequireAuth>
+            <MyAppointments />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: '/profile',
+        element: (
+          <RequireAuth>
+            <Profile />
+          </RequireAuth>
+        ),
+      },
+      {
         path: '*',
         element: <NotFound />,
       },
@@ -77,7 +125,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/doctor',
-    element: <DashboardLayout />,
+    element: (
+      <RequireAuth roles={['doctor']}>
+        <DashboardLayout />
+      </RequireAuth>
+    ),
     errorElement: <RouteError />,
     children: [
       {
@@ -99,6 +151,37 @@ const router = createBrowserRouter([
       {
         path: 'services',
         element: <Services />,
+      },
+      {
+        path: 'profile',
+        element: <Profile />,
+      },
+    ],
+  },
+  {
+    path: '/admin',
+    element: (
+      <RequireAuth roles={['admin']}>
+        <DashboardLayout />
+      </RequireAuth>
+    ),
+    errorElement: <RouteError />,
+    children: [
+      {
+        index: true,
+        element: <AdminDashboard />,
+      },
+      {
+        path: 'appointments',
+        element: <AdminAppointments />,
+      },
+      {
+        path: 'doctors',
+        element: <AdminDoctors />,
+      },
+      {
+        path: 'profile',
+        element: <Profile />,
       },
     ],
   },

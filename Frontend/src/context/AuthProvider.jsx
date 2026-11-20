@@ -100,21 +100,28 @@ const AuthProvider = ({ children }) => {
       window.removeEventListener('appointease:unauthorized', handleUnauthorized);
   }, [logout]);
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    // Backend roles: admin | doctor | receptionist | patient
+    const role = user?.role;
+
+    return {
       user,
       token,
       loading,
+      role,
       isAuthenticated: Boolean(token && user),
-      isCustomer: user?.role === 'customer' || user?.role === 'patient',
-      isDoctor: user?.role === 'doctor' || user?.role === 'provider',
-      isProvider: user?.role === 'doctor' || user?.role === 'provider',
+      isPatient: role === 'patient',
+      isAdmin: role === 'admin',
+      hasRole: (...roles) => Boolean(role && roles.includes(role)),
+      // Kept for existing components
+      isCustomer: role === 'customer' || role === 'patient',
+      isDoctor: role === 'doctor' || role === 'provider',
+      isProvider: role === 'doctor' || role === 'provider',
       login,
       register,
       logout,
-    }),
-    [user, token, loading, login, register, logout]
-  );
+    };
+  }, [user, token, loading, login, register, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

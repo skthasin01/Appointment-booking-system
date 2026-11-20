@@ -8,6 +8,7 @@ import PasswordInput from '../../components/form/PasswordInput';
 import SubmitButton from '../../components/form/SubmitButton';
 import TextInput from '../../components/form/TextInput';
 import useAuth from '../../hooks/useAuth';
+import getErrorMessage from '../../utils/getErrorMessage';
 
 const Login = () => {
   const { login } = useAuth();
@@ -53,15 +54,15 @@ const Login = () => {
       const user = await login(form.email.trim(), form.password);
       toast.success(`Welcome back, ${user.name.split(' ')[0]}`);
 
-      if (user.role === 'provider') {
-        navigate('/doctor/dashboard', { replace: true });
-      } else {
-        navigate(location.state?.from || '/', { replace: true });
-      }
+      // Staff go to their dashboard; patients return to where they came from
+      const home =
+        user.role === 'admin' ? '/admin' : user.role === 'doctor' ? '/doctor' : '/';
+      navigate(location.state?.from || home, {
+        replace: true,
+        state: location.state?.fromState ?? undefined,
+      });
     } catch (error) {
-      toast.error(
-        error.response?.data?.detail || 'Unable to sign in. Please try again.'
-      );
+      toast.error(getErrorMessage(error, 'Unable to sign in. Please try again.'));
     } finally {
       setSubmitting(false);
     }

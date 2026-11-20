@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { FaArrowLeft, FaExclamationTriangle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -28,6 +28,9 @@ const firstWorkingDate = (workingDays) => {
 const Booking = () => {
   const { doctorId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Optional { date, slot } chosen on another page (e.g. the Home page)
+  const preselect = useRef(location.state ?? null);
 
   const [doctor, setDoctor] = useState(null);
   const [doctorLoading, setDoctorLoading] = useState(true);
@@ -66,7 +69,13 @@ const Booking = () => {
         const days = (data.schedules || [])
           .filter((item) => item.is_active)
           .map((item) => item.day_of_week);
-        setDate(firstWorkingDate(days));
+        const wanted = preselect.current?.date;
+        const wantedIsValid =
+          wanted &&
+          wanted >= addDaysISO(0) &&
+          wanted <= addDaysISO(BOOKING_WINDOW_DAYS - 1) &&
+          days.includes(DAY_KEYS[parseISODate(wanted).getDay()]);
+        setDate(wantedIsValid ? wanted : firstWorkingDate(days));
       })
       .catch((err) => {
         if (active) {
@@ -96,7 +105,15 @@ const Booking = () => {
     setSlotsError('');
     setSelectedSlot(null);
     try {
-      setSlots(await getAvailableSlots(doctorId, date));
+      const data = await getAvailableSlots(doctorId, date);
+      setSlots(data);
+      // Pre-select the slot chosen on the previous page (only once)
+      const wanted = preselect.current;
+      if (wanted?.slot && wanted.date === date) {
+        const match = data.find((item) => item.start_time === wanted.slot.start_time);
+        if (match) setSelectedSlot(match);
+        preselect.current = null;
+      }
     } catch (err) {
       setSlots([]);
       setSlotsError(getErrorMessage(err, 'Could not load available slots.'));
@@ -115,6 +132,8 @@ const Booking = () => {
     try {
       const appointment = await bookAppointment({
         doctor_id: doctor.id,
+        // Required by the API: null = the signed-in patient books for themselves
+        patient_id: null,
         appointment_date: date,
         start_time: selectedSlot.start_time,
         end_time: selectedSlot.end_time,
