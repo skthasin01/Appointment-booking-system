@@ -200,3 +200,72 @@ def token_login(
 )
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+@router.patch(
+    "/me", response_model=UserResponse, summary="[Authenticated] Update My Profile"
+)
+def update_me(
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    updates = data.model_dump(exclude_unset=True)
+    if updates.get("name") is None:
+        updates.pop("name", None)
+
+    for field, value in updates.items():
+        setattr(current_user, field, value)
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserResponse,
+    summary="[Admin] Update / Deactivate User",
+)
+def admin_update_user(
+    user_id: int,
+    data: AdminUserUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if current_user.role != models.UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admin can update users",
+        )
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    updates = data.model_dump(exclude_unset=True)
+    for field in ("name", "email", "role", "is_active"):
+        if field in updates and updates[field] is None:
+            updates.pop(field)
+
+    
+    if user.id == current_user.id:
+        if updates.get("is_active") is False or (
+            "role" in updates and updates["role"] != models.UserRole.ADMIN
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="You cannot deactivate yourself or remove your own admin role",
+            )
+
+    if "email" in updates and updates["email"] != user.email:
+        if db.query(models.User).filter(models.User.email == updates["email"]).first():
+            raise HTTPException(status_code=400, detail="Email already registered")
+
+    for field, value in updates.items():
+        setattr(user, field, value)
+
+    db.commit()
+    db.refresh(user)
+    return user
