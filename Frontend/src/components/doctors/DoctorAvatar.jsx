@@ -26,16 +26,17 @@ const sizes = {
 
 /** Doctor photo with an initials fallback (used when there is no image or it fails to load). */
 const DoctorAvatar = ({ name, imageUrl, size = 'md' }) => {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState(null);
   const src = resolveImageUrl(imageUrl);
   const sizeClass = sizes[size] || sizes.md;
+  const failed = failedSrc === src;
 
   if (src && !failed) {
     return (
       <img
         src={src}
         alt={name}
-        onError={() => setFailed(true)}
+        onError={() => setFailedSrc(src)}
         className={`${sizeClass} flex-none rounded-full object-cover`}
       />
     );

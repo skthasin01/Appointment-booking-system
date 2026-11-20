@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { FaCalendarPlus, FaExclamationTriangle } from 'react-icons/fa';
+import { FaCalendarPlus } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 import { cancelAppointment, getMyAppointments } from '../../api/appointments';
-import Loading from '../../components/common/Loading';
+import ErrorState from '../../components/common/ErrorState';
+import { AppointmentCardsSkeleton } from '../../components/common/Skeletons';
 import PageHeader from '../../components/common/PageHeader';
 import AppointmentCard from '../../components/appointments/AppointmentCard';
 import useAuth from '../../hooks/useAuth';
 import useDoctorLookup from '../../hooks/useDoctorLookup';
 import { isPastAppointment } from '../../utils/formatDate';
-import getErrorMessage from '../../utils/getErrorMessage';
+import { getErrorToast } from '../../utils/getErrorMessage';
 
 const TABS = [
   { key: 'upcoming', label: 'Upcoming' },
@@ -33,17 +34,17 @@ const MyAppointments = () => {
   const { isPatient } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [tab, setTab] = useState('upcoming');
   const [cancellingId, setCancellingId] = useState(null);
 
   const loadAppointments = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
     try {
       setAppointments(await getMyAppointments());
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not load your appointments.'));
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,11 @@ const MyAppointments = () => {
     () => appointments.map((item) => item.doctor_id),
     [appointments]
   );
-  const doctors = useDoctorLookup(doctorIds);
+  const {
+    doctors,
+    error: doctorLookupError,
+    reload: reloadDoctorDetails,
+  } = useDoctorLookup(doctorIds);
 
   const grouped = useMemo(() => {
     const groups = { upcoming: [], past: [], cancelled: [] };
@@ -76,7 +81,7 @@ const MyAppointments = () => {
       );
       toast.success('Appointment cancelled');
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Could not cancel the appointment.'));
+      toast.error(getErrorToast(err, 'the appointment', 'Could not cancel the appointment.'));
     } finally {
       setCancellingId(null);
     }
@@ -93,16 +98,17 @@ const MyAppointments = () => {
       />
 
       {loading ? (
-        <Loading label="Loading appointments…" className="min-h-[40vh]" />
+        <div className="mt-10">
+          <AppointmentCardsSkeleton />
+        </div>
       ) : error ? (
-        <div className="mt-10 flex flex-col items-center gap-3 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error/10 text-xl text-error">
-            <FaExclamationTriangle />
-          </span>
-          <p className="text-sm text-base-content/70">{error}</p>
-          <button type="button" onClick={loadAppointments} className="btn btn-ghost btn-sm">
-            Try again
-          </button>
+        <div className="mt-10">
+          <ErrorState
+            error={error}
+            context="your appointments"
+            fallback="We could not load your booking history."
+            onRetry={loadAppointments}
+          />
         </div>
       ) : (
         <>
@@ -123,6 +129,18 @@ const MyAppointments = () => {
               </button>
             ))}
           </div>
+
+          {doctorLookupError && (
+            <div className="mt-6">
+              <ErrorState
+                error={doctorLookupError}
+                context="doctor details"
+                fallback="Some doctor names may be missing from your appointments."
+                onRetry={reloadDoctorDetails}
+                compact
+              />
+            </div>
+          )}
 
           {visible.length === 0 ? (
             <div className="mt-10 flex flex-col items-center gap-4 text-center">

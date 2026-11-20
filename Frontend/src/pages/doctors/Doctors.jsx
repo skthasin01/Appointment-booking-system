@@ -6,7 +6,6 @@ import PageHeader from '../../components/common/PageHeader';
 import DoctorFilter from '../../components/doctors/DoctorFilter';
 import { DEFAULT_SPECIALTIES } from '../../utils/constants';
 import DoctorList from '../../components/doctors/DoctorList';
-import getErrorMessage from '../../utils/getErrorMessage';
 
 const FILTER_KEYS = ['name', 'specialty', 'location', 'max_fee'];
 
@@ -14,7 +13,7 @@ const Doctors = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const paramsKey = searchParams.toString();
 
@@ -31,7 +30,7 @@ const Doctors = () => {
 
   const loadDoctors = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
     try {
       const data = await getDoctors({
         ...filters,
@@ -39,7 +38,7 @@ const Doctors = () => {
       });
       setDoctors(data);
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not load doctors.'));
+      setError(err);
     } finally {
       setLoading(false);
     }

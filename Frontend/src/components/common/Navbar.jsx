@@ -4,14 +4,17 @@ import {
   FaBars,
   FaCalendarAlt,
   FaCalendarCheck,
+  FaLock,
   FaSignOutAlt,
   FaThLarge,
   FaTimes,
   FaUserCircle,
+  FaUsers,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 import useAuth from '../../hooks/useAuth';
+import { getChangePasswordPath, getProfilePath } from '../../utils/profileRoutes';
 
 const navLinks = [
   { name: 'Home', path: '/' },
@@ -45,17 +48,21 @@ const Navbar = () => {
     role === 'admin'
       ? [
           { name: 'Admin Dashboard', path: '/admin', icon: FaThLarge },
-          { name: 'Profile', path: '/admin/profile', icon: FaUserCircle },
+          { name: 'Users', path: '/admin/users', icon: FaUsers },
+          { name: 'Profile', path: getProfilePath(role), icon: FaUserCircle },
+          { name: 'Change Password', path: getChangePasswordPath(role), icon: FaLock },
         ]
       : role === 'doctor'
         ? [
             { name: 'Doctor Dashboard', path: '/doctor', icon: FaThLarge },
             { name: 'My Appointments', path: '/my-appointments', icon: FaCalendarAlt },
-            { name: 'Profile', path: '/profile', icon: FaUserCircle },
+            { name: 'Profile', path: getProfilePath(role), icon: FaUserCircle },
+            { name: 'Change Password', path: getChangePasswordPath(role), icon: FaLock },
           ]
         : [
             { name: 'My Appointments', path: '/my-appointments', icon: FaCalendarAlt },
-            { name: 'Profile', path: '/profile', icon: FaUserCircle },
+            { name: 'Profile', path: getProfilePath(role), icon: FaUserCircle },
+            { name: 'Change Password', path: getChangePasswordPath(role), icon: FaLock },
           ];
 
   const handleLogout = () => {

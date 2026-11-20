@@ -6,6 +6,7 @@ import {
   FaBriefcase,
   FaUser,
   FaUserMd,
+  FaUsers,
   FaGlobe,
   FaSignOutAlt,
 } from "react-icons/fa";
@@ -25,6 +26,7 @@ const adminMenu = [
   { name: "Dashboard", icon: FaHome, path: "/admin", end: true },
   { name: "Appointments", icon: FaCalendarCheck, path: "/admin/appointments" },
   { name: "Doctors", icon: FaUserMd, path: "/admin/doctors" },
+  { name: "Users", icon: FaUsers, path: "/admin/users" },
   { name: "My Profile", icon: FaUser, path: "/admin/profile" },
 ];
 
@@ -48,9 +50,13 @@ export default function Sidebar({ onNavigate }) {
   };
 
   return (
-    <aside className="flex min-h-screen w-64 flex-col border-r border-slate-200 bg-white">
+    <aside className="flex h-screen w-64 flex-col overflow-hidden border-r border-slate-200 bg-white">
       <div className="border-b border-slate-100 p-6">
-        <Link to="/" onClick={onNavigate} className="text-xl font-bold text-blue-600">
+        <Link
+          to="/"
+          onClick={onNavigate}
+          className="text-xl font-bold text-blue-600"
+        >
           Appoint<span className="text-slate-800">Ease</span>
         </Link>
         <p className="mt-1 text-xs text-slate-500">
@@ -58,8 +64,10 @@ export default function Sidebar({ onNavigate }) {
         </p>
       </div>
 
-      <nav className="flex-1 space-y-2 p-4">
-        <p className="mb-4 text-xs font-semibold uppercase text-slate-400">Menu</p>
+      <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
+        <p className="mb-4 text-xs font-semibold uppercase text-slate-400">
+          Menu
+        </p>
 
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -79,7 +87,7 @@ export default function Sidebar({ onNavigate }) {
         })}
       </nav>
 
-      <div className="space-y-2 border-t border-slate-100 p-4">
+      <div className="flex-none space-y-2 border-t border-slate-100 p-4">
         <Link
           to="/"
           onClick={onNavigate}

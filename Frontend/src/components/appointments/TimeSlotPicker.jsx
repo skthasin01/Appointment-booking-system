@@ -1,5 +1,7 @@
 import { FaRegClock } from 'react-icons/fa';
 
+import ErrorState from '../common/ErrorState';
+import { Bar, Frame } from '../common/Skeletons';
 import { formatTime } from '../../utils/formatDate';
 
 const slotKey = (slot) => `${slot.start_time}-${slot.end_time}`;
@@ -7,24 +9,26 @@ const slotKey = (slot) => `${slot.start_time}-${slot.end_time}`;
 const TimeSlotPicker = ({ slots, loading, error, selected, onSelect, onRetry }) => {
   if (loading) {
     return (
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      <Frame
+        label="Loading time slots"
+        className="grid grid-cols-3 gap-2 sm:grid-cols-4"
+      >
         {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="skeleton h-11 rounded-lg" aria-hidden="true" />
+          <Bar key={index} className="h-11 rounded-lg" />
         ))}
-      </div>
+      </Frame>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl bg-error/10 p-4 text-sm text-error">
-        {error}
-        {onRetry && (
-          <button type="button" onClick={onRetry} className="btn btn-ghost btn-xs ml-2">
-            Retry
-          </button>
-        )}
-      </div>
+      <ErrorState
+        error={error}
+        context="available time slots"
+        fallback="We could not check this doctor's availability."
+        onRetry={onRetry}
+        compact
+      />
     );
   }
 

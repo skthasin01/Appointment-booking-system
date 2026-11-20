@@ -3,32 +3,33 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getMyAppointments, updateAppointmentStatus } from '../api/appointments';
 import { getUsers } from '../api/auth';
 import { getDoctors } from '../api/doctors';
-import getErrorMessage from '../utils/getErrorMessage';
 
 const indexById = (items) => Object.fromEntries(items.map((item) => [item.id, item]));
-
 
 const useAdminAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [users, setUsers] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
+  const [lookupError, setLookupError] = useState(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
+    setLookupError(null);
     try {
-      const [appointmentData, userData, doctorData] = await Promise.all([
+      const [appointmentData, lookupResults] = await Promise.all([
         getMyAppointments(),
-        getUsers().catch(() => []), // names are optional — don't fail the page
-        getDoctors().catch(() => []),
+        Promise.allSettled([getUsers(), getDoctors()]),
       ]);
+      const [userResult, doctorResult] = lookupResults;
       setAppointments(appointmentData);
-      setUsers(userData);
-      setDoctors(doctorData);
+      setUsers(userResult.status === 'fulfilled' ? userResult.value : []);
+      setDoctors(doctorResult.status === 'fulfilled' ? doctorResult.value : []);
+      setLookupError(lookupResults.find((result) => result.status === 'rejected')?.reason || null);
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not load appointments.'));
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -56,6 +57,7 @@ const useAdminAppointments = () => {
     doctorsById,
     loading,
     error,
+    lookupError,
     reload,
     updateStatus,
   };

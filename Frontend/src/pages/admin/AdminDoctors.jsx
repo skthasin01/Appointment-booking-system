@@ -1,24 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { FaStar, FaSyncAlt } from 'react-icons/fa';
+import { FaEdit, FaStar, FaSyncAlt } from 'react-icons/fa';
 
 import { getDoctors } from '../../api/doctors';
-import Loading from '../../components/common/Loading';
+import ErrorState from '../../components/common/ErrorState';
+import { TableSkeleton } from '../../components/common/Skeletons';
 import DoctorAvatar from '../../components/doctors/DoctorAvatar';
-import getErrorMessage from '../../utils/getErrorMessage';
 
 const AdminDoctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
     try {
       setDoctors(await getDoctors());
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not load doctors.'));
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -50,14 +50,15 @@ const AdminDoctors = () => {
         </div>
 
         {loading ? (
-          <Loading className="min-h-[30vh]" />
+          <TableSkeleton rows={6} columns={7} label="Loading doctors" />
         ) : error ? (
-          <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <p className="text-sm text-error">{error}</p>
-            <button type="button" onClick={load} className="btn btn-ghost btn-sm">
-              Try again
-            </button>
-          </div>
+          <ErrorState
+            error={error}
+            context="doctors"
+            fallback="We could not load the doctor list."
+            onRetry={load}
+            compact
+          />
         ) : doctors.length === 0 ? (
           <p className="py-10 text-center text-sm text-base-content/60">
             No doctors have been added yet.
@@ -87,8 +88,12 @@ const AdminDoctors = () => {
                           size="sm"
                         />
                         <div>
-                          <p className="font-medium text-base-content">{doctor.name}</p>
-                          <p className="text-xs text-base-content/50">{doctor.email}</p>
+                          <p className="font-medium text-base-content">
+                            {doctor.name}
+                          </p>
+                          <p className="text-xs text-base-content/50">
+                            {doctor.email}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -111,9 +116,21 @@ const AdminDoctors = () => {
                       </span>
                     </td>
                     <td>
-                      <Link to={`/doctors/${doctor.id}`} className="btn btn-ghost btn-xs">
-                        View
-                      </Link>
+                      <div className="flex items-center gap-1">
+                        <Link
+                          to={`/admin/doctors/${doctor.id}`}
+                          className="btn btn-ghost btn-xs"
+                        >
+                          <FaEdit />
+                          Edit
+                        </Link>
+                        <Link
+                          to={`/doctors/${doctor.id}`}
+                          className="btn btn-ghost btn-xs"
+                        >
+                          View
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -24,6 +24,7 @@ import Booking from '../pages/booking/Booking';
 import BookingConfirmation from '../pages/booking/BookingConfirmation';
 import MyAppointments from '../pages/user/MyAppointments';
 import Profile from '../pages/user/Profile';
+import ChangePassword from '../pages/user/ChangePassword';
 
 // Doctor dashboard
 import Dashboard from '../pages/doctor/Dashboard';
@@ -35,6 +36,8 @@ import Services from '../pages/doctor/Services';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminAppointments from '../pages/admin/AdminAppointments';
 import AdminDoctors from '../pages/admin/AdminDoctors';
+import AdminDoctorEdit from '../pages/admin/AdminDoctorEdit';
+import AdminUsers from '../pages/admin/AdminUsers';
 
 const PublicLayout = () => (
   <>
@@ -118,6 +121,14 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: '/change-password',
+        element: (
+          <RequireAuth>
+            <ChangePassword />
+          </RequireAuth>
+        ),
+      },
+      {
         path: '*',
         element: <NotFound />,
       },
@@ -156,6 +167,10 @@ const router = createBrowserRouter([
         path: 'profile',
         element: <Profile />,
       },
+      {
+        path: 'profile/change-password',
+        element: <ChangePassword />,
+      },
     ],
   },
   {
@@ -180,8 +195,20 @@ const router = createBrowserRouter([
         element: <AdminDoctors />,
       },
       {
+        path: 'doctors/:doctorId',
+        element: <AdminDoctorEdit />,
+      },
+      {
+        path: 'users',
+        element: <AdminUsers />,
+      },
+      {
         path: 'profile',
         element: <Profile />,
+      },
+      {
+        path: 'profile/change-password',
+        element: <ChangePassword />,
       },
     ],
   },

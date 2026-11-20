@@ -10,7 +10,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <div className="hidden lg:block">
+      <div className="hidden lg:sticky lg:top-0 lg:block lg:h-screen lg:w-64 lg:flex-none">
         <Sidebar />
       </div>
 

@@ -8,15 +8,24 @@ import {
   FaUserMd,
 } from 'react-icons/fa';
 
-import Loading from '../../components/common/Loading';
+import ErrorState from '../../components/common/ErrorState';
+import { DashboardSkeleton } from '../../components/common/Skeletons';
 import AppointmentTable from '../../components/appointments/AppointmentTable';
 import StatCard from '../../components/dashboard/StatCard';
 import useAdminAppointments from '../../hooks/useAdminAppointments';
 import { isPastAppointment, todayISO } from '../../utils/formatDate';
 
 const AdminDashboard = () => {
-  const { appointments, doctors, usersById, doctorsById, loading, error, reload } =
-    useAdminAppointments();
+  const {
+    appointments,
+    doctors,
+    usersById,
+    doctorsById,
+    loading,
+    error,
+    lookupError,
+    reload,
+  } = useAdminAppointments();
 
   const stats = useMemo(() => {
     const today = todayISO();
@@ -37,17 +46,17 @@ const AdminDashboard = () => {
   }, [appointments, doctors]);
 
   if (loading) {
-    return <Loading label="Loading dashboard…" className="min-h-[50vh]" />;
+    return <DashboardSkeleton />;
   }
 
   if (error) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
-        <p className="text-sm text-error">{error}</p>
-        <button type="button" onClick={reload} className="btn btn-ghost btn-sm">
-          Try again
-        </button>
-      </div>
+      <ErrorState
+        error={error}
+        context="the admin dashboard"
+        fallback="We could not load the booking overview."
+        onRetry={reload}
+      />
     );
   }
 
@@ -91,6 +100,16 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-8">
+      {lookupError && (
+        <ErrorState
+          error={lookupError}
+          context="patient and doctor names"
+          fallback="Some names may be missing from the overview."
+          onRetry={reload}
+          compact
+        />
+      )}
+
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
         {cards.map((card) => (
           <StatCard key={card.title} {...card} />

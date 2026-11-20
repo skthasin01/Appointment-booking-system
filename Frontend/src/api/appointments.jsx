@@ -14,10 +14,23 @@ export const getMyAppointments = async () => {
   return data;
 };
 
+// GET /appointments/stats — admins and doctors only
+export const getAppointmentStats = async () => {
+  const { data } = await client.get('/appointments/stats');
+  return data;
+};
+
 // PATCH /appointments/{id}/status — patients may only set "cancelled"
-export const updateAppointmentStatus = async (appointmentId, status) => {
+export const updateAppointmentStatus = async (
+  appointmentId,
+  status,
+  prescriptionNotes
+) => {
   const { data } = await client.patch(`/appointments/${appointmentId}/status`, {
     status,
+    ...(prescriptionNotes !== undefined
+      ? { prescription_notes: prescriptionNotes }
+      : {}),
   });
   return data;
 };

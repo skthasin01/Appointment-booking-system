@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { FaSearch, FaSyncAlt } from 'react-icons/fa';
 
-import Loading from '../../components/common/Loading';
+import ErrorState from '../../components/common/ErrorState';
+import { TableSkeleton } from '../../components/common/Skeletons';
 import AppointmentTable from '../../components/appointments/AppointmentTable';
 import { STATUS_OPTIONS } from '../../utils/constants';
 import SelectInput from '../../components/form/SelectInput';
@@ -9,8 +10,16 @@ import TextInput from '../../components/form/TextInput';
 import useAdminAppointments from '../../hooks/useAdminAppointments';
 
 const AdminAppointments = () => {
-  const { appointments, usersById, doctorsById, loading, error, reload, updateStatus } =
-    useAdminAppointments();
+  const {
+    appointments,
+    usersById,
+    doctorsById,
+    loading,
+    error,
+    lookupError,
+    reload,
+    updateStatus,
+  } = useAdminAppointments();
 
   const [status, setStatus] = useState('');
   const [date, setDate] = useState('');
@@ -84,16 +93,26 @@ const AdminAppointments = () => {
         </div>
 
         {loading ? (
-          <Loading className="min-h-[30vh]" />
+          <TableSkeleton rows={6} columns={5} label="Loading appointments" />
         ) : error ? (
-          <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <p className="text-sm text-error">{error}</p>
-            <button type="button" onClick={reload} className="btn btn-ghost btn-sm">
-              Try again
-            </button>
-          </div>
+          <ErrorState
+            error={error}
+            context="appointments"
+            fallback="We could not load the appointment list."
+            onRetry={reload}
+            compact
+          />
         ) : (
           <>
+            {lookupError && (
+              <ErrorState
+                error={lookupError}
+                context="patient and doctor names"
+                fallback="Some names may be missing from the table."
+                onRetry={reload}
+                compact
+              />
+            )}
             <p className="text-sm text-base-content/60">
               Showing {filtered.length} of {appointments.length}
             </p>

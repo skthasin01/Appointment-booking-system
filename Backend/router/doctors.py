@@ -15,7 +15,8 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/doctors", tags=["Doctors"])
 
-UPLOAD_DIR = "uploads/doctors"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "doctors")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
@@ -170,7 +171,9 @@ def get_individual_doctor(doctor_id: int, db: Session = Depends(get_db)):
 
 
 @router.put(
-    "/{doctor_id}", response_model=DoctorResponse, summary="[Admin] Update Doctor"
+    "/{doctor_id}",
+    response_model=DoctorResponse,
+    summary="[Admin / Doctor] Update Doctor",
 )
 def update_doctor(
     doctor_id: int,
@@ -178,10 +181,10 @@ def update_doctor(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    if current_user.role != models.UserRole.ADMIN:
+    if current_user.role not in (models.UserRole.ADMIN, models.UserRole.DOCTOR):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not permitted, only admin can update doctor",
+            detail="Not permitted, only admin or the doctor can update this profile",
         )
 
     doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
@@ -189,6 +192,18 @@ def update_doctor(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found"
         )
+
+    is_owner = current_user.role == models.UserRole.DOCTOR
+    if is_owner and doctor.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own profile",
+        )
+
+    # Ratings and review counts are admin-controlled, not doctor-editable.
+    if is_owner:
+        data.rating = None
+        data.reviews_count = None
 
     if data.name is not None:
         doctor.name = data.name
@@ -208,10 +223,10 @@ def update_doctor(
         doctor.rating = data.rating
     if data.reviews_count is not None:
         doctor.reviews_count = data.reviews_count
-    if data.free_cancellation is not None:
-        doctor.free_cancellation = data.free_cancellation
     if data.cancellation_fee is not None:
         doctor.cancellation_fee = data.cancellation_fee
+    if data.free_cancellation is not None:
+        doctor.free_cancellation = data.free_cancellation
     if doctor.free_cancellation:
         doctor.cancellation_fee = 0
     if data.consultation_fee is not None:

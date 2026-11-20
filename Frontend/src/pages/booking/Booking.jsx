@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { FaArrowLeft, FaExclamationTriangle } from 'react-icons/fa';
+import { FaArrowLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 import { bookAppointment } from '../../api/appointments';
 import { getDoctor } from '../../api/doctors';
 import { getAvailableSlots } from '../../api/schedules';
-import Loading from '../../components/common/Loading';
+import ErrorState from '../../components/common/ErrorState';
+import { BookingSkeleton } from '../../components/common/Skeletons';
 import BookingForm from '../../components/appointments/BookingForm';
 import DatePicker from '../../components/appointments/DatePicker';
 import TimeSlotPicker from '../../components/appointments/TimeSlotPicker';
 import DoctorAvatar from '../../components/doctors/DoctorAvatar';
 import { addDaysISO, parseISODate } from '../../utils/formatDate';
-import getErrorMessage from '../../utils/getErrorMessage';
+import { getErrorToast } from '../../utils/getErrorMessage';
 
 const BOOKING_WINDOW_DAYS = 14;
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -34,12 +35,12 @@ const Booking = () => {
 
   const [doctor, setDoctor] = useState(null);
   const [doctorLoading, setDoctorLoading] = useState(true);
-  const [doctorError, setDoctorError] = useState('');
+  const [doctorError, setDoctorError] = useState(null);
 
   const [date, setDate] = useState('');
   const [slots, setSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
-  const [slotsError, setSlotsError] = useState('');
+  const [slotsError, setSlotsError] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   const [notes, setNotes] = useState('');
@@ -60,7 +61,7 @@ const Booking = () => {
   useEffect(() => {
     let active = true;
     setDoctorLoading(true);
-    setDoctorError('');
+    setDoctorError(null);
 
     getDoctor(doctorId)
       .then((data) => {
@@ -79,11 +80,7 @@ const Booking = () => {
       })
       .catch((err) => {
         if (active) {
-          setDoctorError(
-            err.response?.status === 404
-              ? 'This doctor does not exist.'
-              : getErrorMessage(err, 'Could not load the doctor.')
-          );
+          setDoctorError(err);
         }
       })
       .finally(() => {
@@ -102,7 +99,7 @@ const Booking = () => {
       return;
     }
     setSlotsLoading(true);
-    setSlotsError('');
+    setSlotsError(null);
     setSelectedSlot(null);
     try {
       const data = await getAvailableSlots(doctorId, date);
@@ -116,7 +113,7 @@ const Booking = () => {
       }
     } catch (err) {
       setSlots([]);
-      setSlotsError(getErrorMessage(err, 'Could not load available slots.'));
+      setSlotsError(err);
     } finally {
       setSlotsLoading(false);
     }
@@ -145,7 +142,9 @@ const Booking = () => {
         state: { appointment, doctor },
       });
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Could not book this slot. Please try another.'));
+      toast.error(
+        getErrorToast(err, 'the booking', 'Could not book this slot. Please try another.')
+      );
       // The slot may have just been taken — refresh the list
       loadSlots();
     } finally {
@@ -154,19 +153,26 @@ const Booking = () => {
   };
 
   if (doctorLoading) {
-    return <Loading label="Preparing booking…" />;
+    return <BookingSkeleton />;
   }
 
   if (doctorError) {
     return (
-      <section className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error/10 text-xl text-error">
-          <FaExclamationTriangle />
-        </span>
-        <p className="text-sm text-base-content/70">{doctorError}</p>
-        <Link to="/doctors" className="btn btn-primary">
-          Browse doctors
-        </Link>
+      <section className="mx-auto max-w-3xl px-6 py-12">
+        <ErrorState
+          error={doctorError}
+          context="this doctor"
+          fallback="We could not prepare the booking page."
+          description={
+            doctorError?.response?.status === 404
+              ? 'This doctor no longer exists. Browse the doctor list to choose another specialist.'
+              : undefined
+          }
+        >
+          <Link to="/doctors" className="btn btn-ghost btn-sm mt-3">
+            Browse doctors
+          </Link>
+        </ErrorState>
       </section>
     );
   }

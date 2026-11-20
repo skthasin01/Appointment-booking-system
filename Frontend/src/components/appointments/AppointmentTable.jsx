@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import AppointmentStatusBadge from './AppointmentStatusBadge';
 import { STATUS_OPTIONS } from '../../utils/constants';
 import { formatDate, formatTimeRange } from '../../utils/formatDate';
-import getErrorMessage from '../../utils/getErrorMessage';
+import { getErrorToast } from '../../utils/getErrorMessage';
 
 /**
  * Admin table of appointments. Pass `onStatusChange(id, status)` to make the
@@ -20,7 +20,7 @@ const AppointmentTable = ({ appointments, usersById, doctorsById, onStatusChange
       await onStatusChange(appointment.id, status);
       toast.success(`Appointment #${appointment.id} updated`);
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Could not update the status.'));
+      toast.error(getErrorToast(err, 'the appointment status', 'Could not update the status.'));
     } finally {
       setSavingId(null);
     }

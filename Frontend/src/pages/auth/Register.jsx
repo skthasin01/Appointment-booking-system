@@ -9,7 +9,7 @@ import PasswordInput from '../../components/form/PasswordInput';
 import SubmitButton from '../../components/form/SubmitButton';
 import TextInput from '../../components/form/TextInput';
 import useAuth from '../../hooks/useAuth';
-import getErrorMessage from '../../utils/getErrorMessage';
+import { getErrorToast } from '../../utils/getErrorMessage';
 
 const Register = () => {
   const { register } = useAuth();
@@ -90,7 +90,9 @@ const Register = () => {
 
       navigate('/doctors', { replace: true });
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Unable to create your account'));
+      toast.error(
+        getErrorToast(error, 'account creation', 'Unable to create your account.')
+      );
     } finally {
       setSubmitting(false);
     }

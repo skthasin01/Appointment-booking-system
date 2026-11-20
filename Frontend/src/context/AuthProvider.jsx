@@ -61,6 +61,21 @@ const AuthProvider = ({ children }) => {
     [login]
   );
 
+  const updateProfile = useCallback(
+    async (payload) => {
+      const profile = await authApi.updateProfile(payload);
+      persist(token, profile);
+      return profile;
+    },
+    [persist, token]
+  );
+
+  const refreshMe = useCallback(async () => {
+    const profile = await authApi.me();
+    persist(token, profile);
+    return profile;
+  }, [persist, token]);
+
   useEffect(() => {
     const storedToken = localStorage.getItem(TOKEN_KEY);
 
@@ -119,9 +134,11 @@ const AuthProvider = ({ children }) => {
       isProvider: role === 'doctor' || role === 'provider',
       login,
       register,
+      updateProfile,
+      refreshMe,
       logout,
     };
-  }, [user, token, loading, login, register, logout]);
+  }, [user, token, loading, login, register, updateProfile, refreshMe, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

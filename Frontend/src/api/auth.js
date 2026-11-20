@@ -15,6 +15,18 @@ export const me = async () => {
   return data;
 };
 
+// PATCH /auth/me — update the signed-in user's name and phone
+export const updateProfile = async (payload) => {
+  const { data } = await client.patch('/auth/me', payload);
+  return data;
+};
+
+// PATCH /auth/users/{userId} — admin update/deactivate a user
+export const adminUpdateUser = async (userId, payload) => {
+  const { data } = await client.patch(`/auth/users/${userId}`, payload);
+  return data;
+};
+
 // POST /auth/change-password — any signed-in user
 export const changePassword = async (currentPassword, newPassword) => {
   const { data } = await client.post('/auth/change-password', {

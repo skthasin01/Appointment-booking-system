@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { FaCalendarAlt, FaClock, FaStickyNote } from 'react-icons/fa';
+import {
+  FaCalendarAlt,
+  FaClock,
+  FaPrescriptionBottle,
+  FaStickyNote,
+} from 'react-icons/fa';
 
 import DoctorAvatar from '../doctors/DoctorAvatar';
 import AppointmentStatusBadge from './AppointmentStatusBadge';
@@ -46,11 +51,32 @@ const AppointmentCard = ({ appointment, doctor, onCancel, cancelling }) => {
           </span>
         </div>
 
-        {appointment.notes && (
-          <p className="flex items-start gap-2 text-sm text-base-content/60">
-            <FaStickyNote className="mt-1 flex-none text-base-content/40" />
-            <span className="line-clamp-2">{appointment.notes}</span>
-          </p>
+        {(appointment.notes?.trim() || appointment.prescription_notes?.trim()) && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {appointment.notes?.trim() && (
+              <div className="rounded-xl bg-base-200 p-4">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-content/50">
+                  <FaStickyNote />
+                  Your notes
+                </p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-base-content/70">
+                  {appointment.notes}
+                </p>
+              </div>
+            )}
+
+            {appointment.prescription_notes?.trim() && (
+              <div className="rounded-xl border border-success/30 bg-success/10 p-4">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-success">
+                  <FaPrescriptionBottle />
+                  Prescription
+                </p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-base-content/80">
+                  {appointment.prescription_notes}
+                </p>
+              </div>
+            )}
+          </div>
         )}
 
         {onCancel && (

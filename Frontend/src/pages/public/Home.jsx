@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   FaArrowRight,
@@ -20,9 +20,12 @@ import {
 
 import { getDoctors } from '../../api/doctors';
 import { getAvailableSlots } from '../../api/schedules';
+import ErrorState from '../../components/common/ErrorState';
+import { Bar, DoctorCardSkeleton } from '../../components/common/Skeletons';
 import DoctorAvatar from '../../components/doctors/DoctorAvatar';
 import DoctorCard from '../../components/doctors/DoctorCard';
 import SelectInput from '../../components/form/SelectInput';
+import useAuth from '../../hooks/useAuth';
 import { addDaysISO, formatDate, formatTime, parseISODate } from '../../utils/formatDate';
 
 const specialtyIcons = {
@@ -67,18 +70,33 @@ const workingDaysOf = (doctor) =>
 
 const Home = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [specialty, setSpecialty] = useState('');
   const [city, setCity] = useState('');
 
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
 
   // Spotlight doctor's next free slots
   const [slotDate, setSlotDate] = useState('');
   const [heroTimes, setHeroTimes] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState(null);
+  const [slotRetry, setSlotRetry] = useState(0);
   const [heroSlot, setHeroSlot] = useState(null);
+
+  const loadDoctors = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setDoctors(await getDoctors());
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -87,8 +105,8 @@ const Home = () => {
       .then((data) => {
         if (active) setDoctors(data);
       })
-      .catch(() => {
-        if (active) setError(true);
+      .catch((err) => {
+        if (active) setError(err);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -137,6 +155,7 @@ const Home = () => {
     );
 
     const findSlots = async () => {
+      setSlotsError(null);
       setSlotsLoading(true);
       for (const iso of candidates) {
         try {
@@ -149,7 +168,8 @@ const Home = () => {
             setHeroSlot(shown[0]);
             break;
           }
-        } catch {
+        } catch (err) {
+          if (active) setSlotsError(err);
           break;
         }
       }
@@ -161,7 +181,7 @@ const Home = () => {
     return () => {
       active = false;
     };
-  }, [spotlight]);
+  }, [spotlight, slotRetry]);
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -186,10 +206,10 @@ const Home = () => {
   };
 
   const stats = [
-    { value: loading ? '…' : `${doctors.length}`, label: 'Verified doctors', icon: FaUserCheck },
-    { value: loading ? '…' : `${specialties.length}`, label: 'Specialties', icon: FaStethoscope },
+    { value: doctors.length, label: 'Verified doctors', icon: FaUserCheck, loading },
+    { value: specialties.length, label: 'Specialties', icon: FaStethoscope, loading },
     { value: '12k+', label: 'Appointments booked', icon: FaCalendarCheck },
-    { value: loading ? '…' : averageRating, label: 'Average rating', icon: FaStar },
+    { value: averageRating, label: 'Average rating', icon: FaStar, loading },
   ];
 
   return (
@@ -266,18 +286,31 @@ const Home = () => {
 
           <div className="card border border-base-300 bg-base-100 shadow-sm">
             {loading ? (
-              <div className="card-body gap-4 p-6" aria-hidden="true">
-                <div className="skeleton h-14 w-full" />
-                <div className="skeleton h-24 w-full" />
-                <div className="skeleton h-12 w-full" />
+              <div
+                className="card-body gap-4 p-6"
+                role="status"
+                aria-label="Loading featured doctor"
+                aria-busy="true"
+              >
+                <Bar className="h-14 w-full rounded-xl" />
+                <Bar className="h-24 w-full rounded-xl" />
+                <Bar className="h-12 w-full rounded-xl" />
+              </div>
+            ) : error ? (
+              <div className="p-6">
+                <ErrorState
+                  error={error}
+                  context="doctors"
+                  fallback="We could not load the featured doctors."
+                  onRetry={loadDoctors}
+                  compact
+                />
               </div>
             ) : !spotlight ? (
               <div className="card-body items-center gap-3 p-8 text-center">
                 <FaUserMd className="text-3xl text-base-content/30" />
                 <p className="text-sm text-base-content/60">
-                  {error
-                    ? 'Could not load doctors right now. Please try again soon.'
-                    : 'No doctors are accepting bookings right now.'}
+                  No doctors are accepting bookings right now.
                 </p>
                 <Link to="/doctors" className="btn btn-ghost btn-sm">
                   Browse doctors
@@ -313,10 +346,25 @@ const Home = () => {
                     </p>
                   </div>
                   {slotsLoading ? (
-                    <div className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-3" aria-hidden="true">
+                    <div
+                      className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-3"
+                      role="status"
+                      aria-label="Loading available slots"
+                      aria-busy="true"
+                    >
                       {Array.from({ length: 6 }).map((_, index) => (
-                        <div key={index} className="skeleton h-9 rounded-lg" />
+                        <Bar key={index} className="h-9 rounded-lg" />
                       ))}
+                    </div>
+                  ) : slotsError ? (
+                    <div className="mt-3">
+                      <ErrorState
+                        error={slotsError}
+                        context="available slots"
+                        fallback="We could not check this doctor's next openings."
+                        onRetry={() => setSlotRetry((value) => value + 1)}
+                        compact
+                      />
                     </div>
                   ) : heroTimes.length === 0 ? (
                     <p className="mt-3 text-sm text-base-content/60">
@@ -385,8 +433,12 @@ const Home = () => {
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <stat.icon />
                 </span>
-                <p className="text-2xl font-bold text-base-content">
-                  {stat.value}
+                <p className="flex h-8 items-center justify-center text-2xl font-bold text-base-content">
+                  {stat.loading ? (
+                    <Bar className="h-7 w-16 rounded-lg" />
+                  ) : (
+                    stat.value
+                  )}
                 </p>
                 <p className="text-sm text-base-content/60">{stat.label}</p>
               </div>
@@ -455,7 +507,7 @@ const Home = () => {
         <div className="mt-10 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
           {loading &&
             Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="skeleton h-36 rounded-box" aria-hidden="true" />
+              <Bar key={index} className="h-36 rounded-box" />
             ))}
           {!loading && specialties.length === 0 && (
             <p className="col-span-full text-sm text-base-content/60">
@@ -513,13 +565,22 @@ const Home = () => {
           <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
             {loading &&
               Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="skeleton h-48 rounded-box" aria-hidden="true" />
+                <DoctorCardSkeleton key={index} />
               ))}
-            {!loading && featured.length === 0 && (
+            {!loading && error && (
+              <div className="col-span-full">
+                <ErrorState
+                  error={error}
+                  context="top rated doctors"
+                  fallback="We could not load the doctor list."
+                  onRetry={loadDoctors}
+                  compact
+                />
+              </div>
+            )}
+            {!loading && !error && featured.length === 0 && (
               <p className="col-span-full text-sm text-base-content/60">
-                {error
-                  ? 'Could not load doctors right now. Please try again soon.'
-                  : 'No doctors to show yet.'}
+                No doctors to show yet.
               </p>
             )}
             {featured.map((doctor) => (
@@ -536,13 +597,20 @@ const Home = () => {
               Ready to see a doctor?
             </h2>
             <p className="max-w-xl text-base-content/60">
-              Create a free account and book your first appointment in under a
-              minute.
+              {isAuthenticated
+                ? 'You are logged in. Browse doctors and book your next appointment.'
+                : 'Create a free account and book your first appointment in under a minute.'}
             </p>
             <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-              <Link to="/register" className="btn btn-primary">
-                Create free account
-              </Link>
+              {isAuthenticated ? (
+                <span className="badge badge-soft badge-success rounded-full px-4 py-3 text-sm font-semibold">
+                  Logged in
+                </span>
+              ) : (
+                <Link to="/register" className="btn btn-primary">
+                  Create free account
+                </Link>
+              )}
               <Link to="/doctors" className="btn btn-ghost">
                 Browse doctors
               </Link>

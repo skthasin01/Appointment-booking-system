@@ -8,7 +8,7 @@ import PasswordInput from '../../components/form/PasswordInput';
 import SubmitButton from '../../components/form/SubmitButton';
 import TextInput from '../../components/form/TextInput';
 import useAuth from '../../hooks/useAuth';
-import getErrorMessage from '../../utils/getErrorMessage';
+import { getErrorToast } from '../../utils/getErrorMessage';
 
 const Login = () => {
   const { login } = useAuth();
@@ -62,7 +62,7 @@ const Login = () => {
         state: location.state?.fromState ?? undefined,
       });
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Unable to sign in. Please try again.'));
+      toast.error(getErrorToast(error, 'sign in', 'Unable to sign in. Please try again.'));
     } finally {
       setSubmitting(false);
     }

@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router';
 
 import useAuth from '../../hooks/useAuth';
-import Loading from './Loading';
+import { Frame, TextLines } from './Skeletons';
 
 /**
  * Protects a route.
@@ -13,7 +13,14 @@ const RequireAuth = ({ children, roles, fallback = '/' }) => {
   const location = useLocation();
 
   if (loading) {
-    return <Loading />;
+    return (
+      <Frame
+        label="Checking your session"
+        className="mx-auto max-w-md space-y-3 px-6 py-20"
+      >
+        <TextLines lines={2} />
+      </Frame>
+    );
   }
 
   if (!isAuthenticated) {

@@ -68,4 +68,116 @@
   body {
     overflow-x: clip;
   }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 22%, transparent);
+    color: var(--color-base-content);
+  }
+
+  :root {
+    scrollbar-color: var(--color-base-300) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-base-300);
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+    background-clip: content-box;
+  }
+}
+
+/*
+ * Motion explains state rather than decorating static surfaces. Controls
+ * acknowledge interaction, overlays and alerts establish context, and skeletons
+ * keep daisyUI's shimmer. No page-wide entrance choreography.
+ */
+@keyframes ae-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ae-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@layer components {
+  .alert,
+  .dropdown-content,
+  .modal-box {
+    animation: ae-pop 180ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  .btn,
+  .tab,
+  .input,
+  .select,
+  .textarea,
+  .file-input,
+  .menu li > a,
+  .navbar a,
+  .table tbody tr {
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease,
+      color 140ms ease,
+      transform 100ms ease;
+  }
+
+  .btn:active,
+  .menu li > a:active {
+    transform: scale(0.98);
+  }
+
+  .card img {
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card:hover img {
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .alert,
+  .dropdown-content,
+  .modal-box {
+    animation: ae-fade 120ms ease-out backwards;
+  }
+
+  .skeleton {
+    animation: none;
+  }
+
+  .btn:active,
+  .menu li > a:active,
+  .card:hover img {
+    transform: none;
+  }
 }

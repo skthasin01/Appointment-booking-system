@@ -6,7 +6,6 @@ import {
   FaCalendarCheck,
   FaClock,
   FaEnvelope,
-  FaExclamationTriangle,
   FaMapMarkerAlt,
   FaPhoneAlt,
   FaShieldAlt,
@@ -14,11 +13,11 @@ import {
 } from 'react-icons/fa';
 
 import { getDoctor } from '../../api/doctors';
-import Loading from '../../components/common/Loading';
+import ErrorState from '../../components/common/ErrorState';
+import { ProfileSkeleton } from '../../components/common/Skeletons';
 import DoctorAvatar from '../../components/doctors/DoctorAvatar';
 import useAuth from '../../hooks/useAuth';
 import { DAY_ORDER, formatDayOfWeek, formatTimeRange } from '../../utils/formatDate';
-import getErrorMessage from '../../utils/getErrorMessage';
 
 const DoctorDetails = () => {
   const { id } = useParams();
@@ -26,12 +25,12 @@ const DoctorDetails = () => {
 
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [notFound, setNotFound] = useState(false);
 
   const loadDoctor = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
     setNotFound(false);
     try {
       setDoctor(await getDoctor(id));
@@ -39,7 +38,7 @@ const DoctorDetails = () => {
       if (err.response?.status === 404) {
         setNotFound(true);
       } else {
-        setError(getErrorMessage(err, 'Could not load this doctor.'));
+        setError(err);
       }
     } finally {
       setLoading(false);
@@ -51,31 +50,28 @@ const DoctorDetails = () => {
   }, [loadDoctor]);
 
   if (loading) {
-    return <Loading label="Loading doctor profile…" />;
+    return <ProfileSkeleton />;
   }
 
   if (notFound || error) {
     return (
-      <section className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error/10 text-xl text-error">
-          <FaExclamationTriangle />
-        </span>
-        <h1 className="text-2xl font-bold text-base-content">
-          {notFound ? 'Doctor not found' : 'Something went wrong'}
-        </h1>
-        <p className="text-sm text-base-content/60">
-          {notFound ? 'This doctor profile does not exist or was removed.' : error}
-        </p>
-        <div className="flex gap-2">
-          {!notFound && (
-            <button type="button" onClick={loadDoctor} className="btn btn-ghost">
-              Try again
-            </button>
-          )}
-          <Link to="/doctors" className="btn btn-primary">
+      <section className="mx-auto max-w-3xl px-6 py-12">
+        <ErrorState
+          error={error}
+          context="this doctor profile"
+          fallback="We could not load the doctor's details."
+          title={notFound ? 'Doctor not found' : undefined}
+          description={
+            notFound
+              ? 'This doctor profile does not exist or was removed. Browse the doctor list to find another specialist.'
+              : undefined
+          }
+          onRetry={notFound ? undefined : loadDoctor}
+        >
+          <Link to="/doctors" className="btn btn-ghost btn-sm mt-3">
             Browse doctors
           </Link>
-        </div>
+        </ErrorState>
       </section>
     );
   }

@@ -1,26 +1,22 @@
-import { FaExclamationTriangle, FaUserMd } from 'react-icons/fa';
+import { FaUserMd } from 'react-icons/fa';
 
-import Loading from '../common/Loading';
+import ErrorState from '../common/ErrorState';
+import { DoctorGridSkeleton } from '../common/Skeletons';
 import DoctorCard from './DoctorCard';
 
 const DoctorList = ({ doctors, loading, error, onRetry, emptyMessage }) => {
   if (loading) {
-    return <Loading label="Loading doctors…" className="min-h-[40vh]" />;
+    return <DoctorGridSkeleton />;
   }
 
   if (error) {
     return (
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error/10 text-xl text-error">
-          <FaExclamationTriangle />
-        </span>
-        <p className="text-sm text-base-content/70">{error}</p>
-        {onRetry && (
-          <button type="button" onClick={onRetry} className="btn btn-ghost btn-sm">
-            Try again
-          </button>
-        )}
-      </div>
+      <ErrorState
+        error={error}
+        context="doctors"
+        fallback="We could not load the doctor list right now."
+        onRetry={onRetry}
+      />
     );
   }
 
