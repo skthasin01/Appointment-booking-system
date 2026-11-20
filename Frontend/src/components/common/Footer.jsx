@@ -98,8 +98,8 @@ const Footer = () => {
               </Link>
             </li>
             <li>
-              <Link to="/doctor/dashboard" className="transition hover:text-primary">
-                Doctor Dashboard
+              <Link to="/my-appointments" className="transition hover:text-primary">
+                My Appointments
               </Link>
             </li>
           </ul>

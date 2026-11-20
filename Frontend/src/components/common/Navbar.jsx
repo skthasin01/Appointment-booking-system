@@ -7,6 +7,7 @@ import {
   FaSignOutAlt,
   FaThLarge,
   FaTimes,
+  FaUserCircle,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -27,7 +28,7 @@ const linkClass = ({ isActive }) =>
   }`;
 
 const Navbar = () => {
-  const { isAuthenticated, isProvider, user, logout } = useAuth();
+  const { isAuthenticated, role, user, logout } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -38,6 +39,24 @@ const Navbar = () => {
       .slice(0, 2)
       .join('')
       .toUpperCase() || 'U';
+
+  // Links for signed-in users (desktop dropdown + mobile menu)
+  const accountLinks =
+    role === 'admin'
+      ? [
+          { name: 'Admin Dashboard', path: '/admin', icon: FaThLarge },
+          { name: 'Profile', path: '/admin/profile', icon: FaUserCircle },
+        ]
+      : role === 'doctor'
+        ? [
+            { name: 'Doctor Dashboard', path: '/doctor', icon: FaThLarge },
+            { name: 'My Appointments', path: '/my-appointments', icon: FaCalendarAlt },
+            { name: 'Profile', path: '/profile', icon: FaUserCircle },
+          ]
+        : [
+            { name: 'My Appointments', path: '/my-appointments', icon: FaCalendarAlt },
+            { name: 'Profile', path: '/profile', icon: FaUserCircle },
+          ];
 
   const handleLogout = () => {
     setIsOpen(false);
@@ -102,20 +121,14 @@ const Navbar = () => {
                     </span>
                   </div>
                 </li>
-                <li>
-                  <Link to="/my-appointments">
-                    <FaCalendarAlt />
-                    My Appointments
-                  </Link>
-                </li>
-                {isProvider && (
-                  <li>
-                    <Link to="/doctor/dashboard">
-                      <FaThLarge />
-                      Dashboard
+                {accountLinks.map((link) => (
+                  <li key={link.path}>
+                    <Link to={link.path}>
+                      <link.icon />
+                      {link.name}
                     </Link>
                   </li>
-                )}
+                ))}
                 <li>
                   <button
                     type="button"
@@ -165,6 +178,19 @@ const Navbar = () => {
                 </NavLink>
               </li>
             ))}
+
+            {isAuthenticated &&
+              accountLinks.map((link) => (
+                <li key={link.path}>
+                  <NavLink
+                    to={link.path}
+                    onClick={() => setIsOpen(false)}
+                    className={linkClass}
+                  >
+                    {link.name}
+                  </NavLink>
+                </li>
+              ))}
 
             {isAuthenticated ? (
               <li className="mt-2">

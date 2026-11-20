@@ -9,12 +9,12 @@ import PasswordInput from '../../components/form/PasswordInput';
 import SubmitButton from '../../components/form/SubmitButton';
 import TextInput from '../../components/form/TextInput';
 import useAuth from '../../hooks/useAuth';
+import getErrorMessage from '../../utils/getErrorMessage';
 
 const Register = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [role, setRole] = useState('customer');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -52,6 +52,8 @@ const Register = () => {
       next.password = 'Password is required';
     } else if (form.password.length < 8) {
       next.password = 'Use at least 8 characters';
+    } else if (form.password.length > 72) {
+      next.password = 'Use at most 72 characters';
     }
 
     if (form.confirm !== form.password) {
@@ -76,25 +78,19 @@ const Register = () => {
     setSubmitting(true);
 
     try {
-      const user = await register({
+      // Public sign-up always creates a patient account (backend rule)
+      await register({
         name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
         phone: form.phone.trim() || undefined,
-        role,
       });
 
       toast.success('Account created successfully');
 
-      if (user.role === 'provider') {
-        navigate('/doctor/dashboard', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+      navigate('/doctors', { replace: true });
     } catch (error) {
-      toast.error(
-        error.response?.data?.detail || 'Unable to create your account'
-      );
+      toast.error(getErrorMessage(error, 'Unable to create your account'));
     } finally {
       setSubmitting(false);
     }
@@ -113,25 +109,6 @@ const Register = () => {
         </>
       }
     >
-      <div role="tablist" className="tabs tabs-box mb-6 w-full">
-        <button
-          type="button"
-          role="tab"
-          onClick={() => setRole('customer')}
-          className={`tab flex-1 ${role === 'customer' ? 'tab-active' : ''}`}
-        >
-          I&apos;m a patient
-        </button>
-        <button
-          type="button"
-          role="tab"
-          onClick={() => setRole('provider')}
-          className={`tab flex-1 ${role === 'provider' ? 'tab-active' : ''}`}
-        >
-          I&apos;m a doctor
-        </button>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <TextInput
           label="Full name"

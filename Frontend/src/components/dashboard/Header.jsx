@@ -1,51 +1,50 @@
-import { FaBell, FaSearch } from "react-icons/fa";
+import { FaBars } from "react-icons/fa";
 
-import TextInput from "../form/TextInput";
+import useAuth from "../../hooks/useAuth";
 
-export default function Header() {
+export default function Header({ onMenuClick }) {
+  const { user, isAdmin } = useAuth();
+
+  const initials =
+    user?.name
+      ?.replace(/^Dr\.?\s+/i, "")
+      .split(" ")
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "U";
+
   return (
-    <header className="h-20 bg-white border-b border-slate-200
-      flex items-center justify-between px-6">
-
-      <div>
-        <h2 className="text-xl font-semibold text-slate-800">
-          Doctor Dashboard
-        </h2>
-        <p className="text-sm text-slate-500">
-          Welcome back! Manage your appointments.
-        </p>
+    <header className="flex h-20 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 md:px-6">
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          aria-label="Open menu"
+          onClick={onMenuClick}
+          className="btn btn-ghost btn-square lg:hidden"
+        >
+          <FaBars />
+        </button>
+        <div className="min-w-0">
+          <h2 className="truncate text-xl font-semibold text-slate-800">
+            {isAdmin ? "Admin Dashboard" : "Doctor Dashboard"}
+          </h2>
+          <p className="hidden truncate text-sm text-slate-500 sm:block">
+            Welcome back! Manage your appointments.
+          </p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-5">
-
-        <TextInput
-          aria-label="Search"
-          type="text"
-          icon={FaSearch}
-          placeholder="Search..."
-          containerClassName="hidden md:block w-56"
-        />
-
-        <button className="relative text-slate-500">
-          <FaBell size={20} />
-          <span className="absolute -top-1 -right-1 w-2 h-2
-            bg-red-500 rounded-full"></span>
-        </button>
-
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-100
-            flex items-center justify-center text-blue-600 font-bold">
-            P
-          </div>
-
-          <div className="hidden sm:block">
-            <p className="text-sm font-semibold">Doctor</p>
-            <p className="text-xs text-slate-500">Specialist</p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-600">
+          {initials}
         </div>
 
+        <div className="hidden sm:block">
+          <p className="text-sm font-semibold">{user?.name}</p>
+          <p className="text-xs capitalize text-slate-500">{user?.role}</p>
+        </div>
       </div>
-
     </header>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   FaArrowRight,
@@ -18,20 +18,12 @@ import {
   FaUserMd,
 } from 'react-icons/fa';
 
-import BookNowButton from '../../components/booking/BookNowButton';
-import DoctorCard from '../../components/doctor/DoctorCard';
-import DoctorPhoto from '../../components/doctor/DoctorPhoto';
+import { getDoctors } from '../../api/doctors';
+import { getAvailableSlots } from '../../api/schedules';
+import DoctorAvatar from '../../components/doctors/DoctorAvatar';
+import DoctorCard from '../../components/doctors/DoctorCard';
 import SelectInput from '../../components/form/SelectInput';
-import {
-  cities,
-  doctors,
-  formatDate,
-  formatFee,
-  formatTime,
-  getFeaturedDoctor,
-  specialties,
-  topRatedDoctors,
-} from '../../data/doctors';
+import { addDaysISO, formatDate, formatTime, parseISODate } from '../../utils/formatDate';
 
 const specialtyIcons = {
   Cardiology: FaHeartbeat,
@@ -44,10 +36,6 @@ const specialtyIcons = {
   'Family Medicine': FaUserMd,
 };
 
-const averageRating = (
-  doctors.reduce((total, doctor) => total + doctor.rating, 0) / doctors.length
-).toFixed(1);
-
 const steps = [
   {
     icon: FaSearch,
@@ -57,7 +45,7 @@ const steps = [
   {
     icon: FaCalendarCheck,
     title: 'Pick a time',
-    text: 'Choose a free date and time slot from the doctor\u2019s schedule.',
+    text: 'Choose a free date and time slot from the doctor’s schedule.',
   },
   {
     icon: FaUserCheck,
@@ -66,15 +54,114 @@ const steps = [
   },
 ];
 
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const LOOKAHEAD_DAYS = 14;
+
+// "Motijheel, Dhaka" -> "Dhaka"
+const cityOf = (location) => location?.split(',').pop().trim() || '';
+
+const workingDaysOf = (doctor) =>
+  (doctor?.schedules || [])
+    .filter((item) => item.is_active)
+    .map((item) => item.day_of_week);
+
 const Home = () => {
   const navigate = useNavigate();
   const [specialty, setSpecialty] = useState('');
   const [city, setCity] = useState('');
 
-  const spotlight = getFeaturedDoctor();
-  const featured = topRatedDoctors(4);
-  const heroTimes = spotlight.availableTimes.slice(0, 6);
-  const [heroSlot, setHeroSlot] = useState(() => heroTimes[1] || heroTimes[0] || '');
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  // Spotlight doctor's next free slots
+  const [slotDate, setSlotDate] = useState('');
+  const [heroTimes, setHeroTimes] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [heroSlot, setHeroSlot] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    getDoctors()
+      .then((data) => {
+        if (active) setDoctors(data);
+      })
+      .catch(() => {
+        if (active) setError(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const byRating = useMemo(
+    () => [...doctors].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
+    [doctors]
+  );
+
+  // Highest-rated doctor who is accepting patients and has working hours
+  const spotlight = useMemo(
+    () => byRating.find((doctor) => doctor.is_available && workingDaysOf(doctor).length) || null,
+    [byRating]
+  );
+
+  const featured = byRating.slice(0, 4);
+
+  const specialties = useMemo(
+    () => [...new Set(doctors.map((doctor) => doctor.specialty).filter(Boolean))].sort(),
+    [doctors]
+  );
+
+  const cities = useMemo(
+    () => [...new Set(doctors.map((doctor) => cityOf(doctor.location)).filter(Boolean))].sort(),
+    [doctors]
+  );
+
+  const averageRating = doctors.length
+    ? (doctors.reduce((total, doctor) => total + (doctor.rating ?? 0), 0) / doctors.length).toFixed(1)
+    : '–';
+
+  // Find the spotlight doctor's first day (within 2 weeks) that still has free slots
+  useEffect(() => {
+    if (!spotlight) return undefined;
+
+    let active = true;
+    const workingDays = workingDaysOf(spotlight);
+    const candidates = Array.from({ length: LOOKAHEAD_DAYS }, (_, index) => addDaysISO(index)).filter(
+      (iso) => workingDays.includes(DAY_KEYS[parseISODate(iso).getDay()])
+    );
+
+    const findSlots = async () => {
+      setSlotsLoading(true);
+      for (const iso of candidates) {
+        try {
+          const slots = await getAvailableSlots(spotlight.id, iso);
+          if (!active) return;
+          if (slots.length) {
+            const shown = slots.slice(0, 6);
+            setSlotDate(iso);
+            setHeroTimes(shown);
+            setHeroSlot(shown[0]);
+            break;
+          }
+        } catch {
+          break;
+        }
+      }
+      if (active) setSlotsLoading(false);
+    };
+
+    findSlots();
+
+    return () => {
+      active = false;
+    };
+  }, [spotlight]);
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -84,18 +171,25 @@ const Home = () => {
       params.set('specialty', specialty);
     }
     if (city) {
-      params.set('city', city);
+      params.set('location', city);
     }
 
     const query = params.toString();
     navigate(query ? `/doctors?${query}` : '/doctors');
   };
 
+  const handleBook = () => {
+    if (!spotlight) return;
+    navigate(`/book/${spotlight.id}`, {
+      state: heroSlot ? { date: slotDate, slot: heroSlot } : undefined,
+    });
+  };
+
   const stats = [
-    { value: `${doctors.length}`, label: 'Verified doctors', icon: FaUserCheck },
-    { value: `${specialties.length}`, label: 'Specialties', icon: FaStethoscope },
+    { value: loading ? '…' : `${doctors.length}`, label: 'Verified doctors', icon: FaUserCheck },
+    { value: loading ? '…' : `${specialties.length}`, label: 'Specialties', icon: FaStethoscope },
     { value: '12k+', label: 'Appointments booked', icon: FaCalendarCheck },
-    { value: averageRating, label: 'Average rating', icon: FaStar },
+    { value: loading ? '…' : averageRating, label: 'Average rating', icon: FaStar },
   ];
 
   return (
@@ -171,88 +265,111 @@ const Home = () => {
           </div>
 
           <div className="card border border-base-300 bg-base-100 shadow-sm">
-            <div className="card-body gap-5 p-6">
-              <div className="flex items-center gap-4">
-                <DoctorPhoto doctor={spotlight} size="md" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-base-content">
-                    {spotlight.name}
-                  </p>
-                  <p className="truncate text-sm text-base-content/60">
-                    {spotlight.specialty} · {spotlight.city}
-                  </p>
-                </div>
-                <span className="badge badge-soft badge-success rounded-full">
-                  Available
-                </span>
+            {loading ? (
+              <div className="card-body gap-4 p-6" aria-hidden="true">
+                <div className="skeleton h-14 w-full" />
+                <div className="skeleton h-24 w-full" />
+                <div className="skeleton h-12 w-full" />
               </div>
-
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-                    Next slots
-                  </p>
-                  <p className="text-xs text-base-content/50">
-                    {formatDate(spotlight.availableDates[0])}
-                  </p>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-3">
-                  {heroTimes.map((slot) => {
-                    const isSelected = heroSlot === slot;
-
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => setHeroSlot(slot)}
-                        aria-pressed={isSelected}
-                        className={`rounded-lg border px-2 py-2 text-center text-xs font-medium transition-colors ${
-                          isSelected
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-base-300 bg-base-200 text-base-content/70 hover:border-primary/40 hover:bg-base-100'
-                        }`}
-                      >
-                        {formatTime(slot)}
-                      </button>
-                    );
-                  })}
-                </div>
+            ) : !spotlight ? (
+              <div className="card-body items-center gap-3 p-8 text-center">
+                <FaUserMd className="text-3xl text-base-content/30" />
+                <p className="text-sm text-base-content/60">
+                  {error
+                    ? 'Could not load doctors right now. Please try again soon.'
+                    : 'No doctors are accepting bookings right now.'}
+                </p>
+                <Link to="/doctors" className="btn btn-ghost btn-sm">
+                  Browse doctors
+                </Link>
               </div>
+            ) : (
+              <div className="card-body gap-5 p-6">
+                <div className="flex items-center gap-4">
+                  <DoctorAvatar name={spotlight.name} imageUrl={spotlight.image_url} />
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      to={`/doctors/${spotlight.id}`}
+                      className="block truncate font-semibold text-base-content hover:text-primary"
+                    >
+                      {spotlight.name}
+                    </Link>
+                    <p className="truncate text-sm text-base-content/60">
+                      {spotlight.specialty} · {cityOf(spotlight.location)}
+                    </p>
+                  </div>
+                  <span className="badge badge-soft badge-success rounded-full">
+                    Available
+                  </span>
+                </div>
 
-              <div className="flex items-center justify-between rounded-xl bg-base-200 p-3 text-sm text-base-content/70">
-                <span className="inline-flex items-center gap-2">
-                  <FaClock className="text-primary" />
-                  {formatFee(spotlight.visitCost)} per visit
-                  {heroSlot && (
-                    <span className="text-base-content/40">
-                      · {formatTime(heroSlot)}
-                    </span>
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
+                      Next slots
+                    </p>
+                    <p className="text-xs text-base-content/50">
+                      {slotDate ? formatDate(slotDate) : ''}
+                    </p>
+                  </div>
+                  {slotsLoading ? (
+                    <div className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-3" aria-hidden="true">
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <div key={index} className="skeleton h-9 rounded-lg" />
+                      ))}
+                    </div>
+                  ) : heroTimes.length === 0 ? (
+                    <p className="mt-3 text-sm text-base-content/60">
+                      No free slots in the next two weeks.
+                    </p>
+                  ) : (
+                    <div className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-3">
+                      {heroTimes.map((slot) => {
+                        const isSelected = heroSlot?.start_time === slot.start_time;
+
+                        return (
+                          <button
+                            key={slot.start_time}
+                            type="button"
+                            onClick={() => setHeroSlot(slot)}
+                            aria-pressed={isSelected}
+                            className={`rounded-lg border px-2 py-2 text-center text-xs font-medium transition-colors ${
+                              isSelected
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-base-300 bg-base-200 text-base-content/70 hover:border-primary/40 hover:bg-base-100'
+                            }`}
+                          >
+                            {formatTime(slot.start_time)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
-                </span>
-                <BookNowButton
-                  doctor={spotlight}
-                  initialDate={spotlight.availableDates[0]}
-                  initialTime={heroSlot}
-                  className="btn btn-primary btn-sm"
-                  label="Book"
-                />
-              </div>
+                </div>
 
-              <div className="flex items-center gap-2 rounded-xl bg-base-200 p-3 text-sm text-base-content/70">
-                {spotlight.cancellation ? (
-                  <>
-                    <FaShieldAlt className="flex-none text-primary" />
-                    Free cancellation up to {spotlight.cancellationHours} hours
-                    before
-                  </>
-                ) : (
-                  <>
-                    <FaShieldAlt className="flex-none text-base-content/40" />
-                    Cancellation is not available for this doctor
-                  </>
-                )}
+                <div className="flex items-center justify-between rounded-xl bg-base-200 p-3 text-sm text-base-content/70">
+                  <span className="inline-flex items-center gap-2">
+                    <FaClock className="text-primary" />
+                    ৳{spotlight.consultation_fee} per visit
+                    {heroSlot && (
+                      <span className="text-base-content/40">
+                        · {formatTime(heroSlot.start_time)}
+                      </span>
+                    )}
+                  </span>
+                  <button type="button" onClick={handleBook} className="btn btn-primary btn-sm">
+                    Book
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-xl bg-base-200 p-3 text-sm text-base-content/70">
+                  <FaShieldAlt className="flex-none text-primary" />
+                  {spotlight.free_cancellation
+                    ? 'Free cancellation'
+                    : `Cancellation fee: ৳${spotlight.cancellation_fee}`}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -336,6 +453,15 @@ const Home = () => {
         </div>
 
         <div className="mt-10 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+          {loading &&
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="skeleton h-36 rounded-box" aria-hidden="true" />
+            ))}
+          {!loading && specialties.length === 0 && (
+            <p className="col-span-full text-sm text-base-content/60">
+              No specialties to show yet.
+            </p>
+          )}
           {specialties.map((name) => {
             const Icon = specialtyIcons[name] || FaStethoscope;
             const count = doctors.filter(
@@ -356,7 +482,7 @@ const Home = () => {
                     {name}
                   </p>
                   <p className="text-xs text-base-content/50">
-                    {count} doctors
+                    {count} doctor{count === 1 ? '' : 's'}
                   </p>
                 </div>
               </Link>
@@ -385,6 +511,17 @@ const Home = () => {
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {loading &&
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="skeleton h-48 rounded-box" aria-hidden="true" />
+              ))}
+            {!loading && featured.length === 0 && (
+              <p className="col-span-full text-sm text-base-content/60">
+                {error
+                  ? 'Could not load doctors right now. Please try again soon.'
+                  : 'No doctors to show yet.'}
+              </p>
+            )}
             {featured.map((doctor) => (
               <DoctorCard key={doctor.id} doctor={doctor} />
             ))}
