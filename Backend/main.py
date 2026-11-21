@@ -16,9 +16,17 @@ os.makedirs(UPLOAD_ROOT, exist_ok=True)
 app = FastAPI()
 app.mount("/uploads", StaticFiles(directory=UPLOAD_ROOT), name="uploads")
 
+origins = ["http://localhost:5173"]
+
+# One or more extra origins, separated by commas (set in Render)
+for url in os.getenv("FRONTEND_URL", "").split(","):
+    url = url.strip().rstrip("/")
+    if url:
+        origins.append(url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
