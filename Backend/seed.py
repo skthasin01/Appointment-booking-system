@@ -1,5 +1,7 @@
 import os
-from datetime import date, time, timedelta
+
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 import models
 from database import SessionLocal
@@ -8,6 +10,24 @@ from router.auth import hash_password
 from sqlalchemy import func
 
 load_dotenv()
+
+WEEKDAY_NUM = {"MON": 0, "TUE": 1, "WED": 2, "THU": 3, "FRI": 4, "SAT": 5, "SUN": 6}
+
+
+def upcoming_working_date(from_date, days):
+    allowed = {WEEKDAY_NUM[d.name] for d in days}
+    d = from_date + timedelta(days=1)
+    while d.weekday() not in allowed:
+        d += timedelta(days=1)
+    return d
+
+
+def past_working_date(from_date, days):
+    allowed = {WEEKDAY_NUM[d.name] for d in days}
+    d = from_date - timedelta(days=1)
+    while d.weekday() not in allowed:
+        d -= timedelta(days=1)
+    return d
 
 
 def seed_data():
@@ -282,20 +302,18 @@ def seed_data():
                     created_doctors.append(doctor)
 
         # 5. Seed 5 Dummy Appointments (Upcoming + Completed)
-        today = date.today()
-        tomorrow = today + timedelta(days=1)
-        yesterday = today - timedelta(days=1)
+        today = datetime.now(ZoneInfo("Asia/Dhaka")).date()
         existing_bookings = db.query(models.Appointment).count()
 
         created_appointments: list[models.Appointment] = []
 
-        if existing_bookings == 0 and len(created_doctors) >= 4 and len(patients) >= 2:
+        if existing_bookings == 0 and len(created_doctors) >= 6 and len(patients) >= 2:
             dummy_bookings = [
                 # Upcoming appointments
                 {
                     "patient_id": patients[0].id,
                     "doctor_id": created_doctors[0].id,
-                    "appointment_date": tomorrow,
+                    "appointment_date": upcoming_working_date(today, dummy_doctors[0]["days"]),
                     "start_time": time(9, 0),
                     "end_time": time(9, 30),
                     "status": models.AppointmentStatus.CONFIRMED,
@@ -305,7 +323,7 @@ def seed_data():
                 {
                     "patient_id": patients[1].id,
                     "doctor_id": created_doctors[1].id,
-                    "appointment_date": tomorrow,
+                    "appointment_date": upcoming_working_date(today, dummy_doctors[1]["days"]),
                     "start_time": time(10, 0),
                     "end_time": time(10, 30),
                     "status": models.AppointmentStatus.CHECKED_IN,
@@ -316,7 +334,7 @@ def seed_data():
                 {
                     "patient_id": patients[0].id,
                     "doctor_id": created_doctors[0].id,
-                    "appointment_date": yesterday,
+                    "appointment_date": past_working_date(today, dummy_doctors[0]["days"]),
                     "start_time": time(10, 0),
                     "end_time": time(10, 30),
                     "status": models.AppointmentStatus.COMPLETED,
@@ -326,7 +344,7 @@ def seed_data():
                 {
                     "patient_id": patients[1].id,
                     "doctor_id": created_doctors[4].id,
-                    "appointment_date": yesterday,
+                    "appointment_date": past_working_date(today, dummy_doctors[4]["days"]),
                     "start_time": time(11, 0),
                     "end_time": time(11, 30),
                     "status": models.AppointmentStatus.COMPLETED,
@@ -336,7 +354,7 @@ def seed_data():
                 {
                     "patient_id": patients[0].id,
                     "doctor_id": created_doctors[5].id,
-                    "appointment_date": yesterday,
+                    "appointment_date": past_working_date(today, dummy_doctors[5]["days"]),
                     "start_time": time(9, 30),
                     "end_time": time(10, 0),
                     "status": models.AppointmentStatus.COMPLETED,
