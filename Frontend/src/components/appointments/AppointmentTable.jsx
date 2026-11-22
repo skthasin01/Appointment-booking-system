@@ -10,8 +10,17 @@ import { getErrorToast } from '../../utils/getErrorMessage';
  * Admin table of appointments. Pass `onStatusChange(id, status)` to make the
  * status editable; otherwise a read-only badge is shown.
  */
-const AppointmentTable = ({ appointments, usersById, doctorsById, onStatusChange }) => {
+const AppointmentTable = ({
+  appointments,
+  usersById,
+  doctorsById,
+  onStatusChange,
+  onReschedule,
+  onNotes,
+  onCancel,
+}) => {
   const [savingId, setSavingId] = useState(null);
+  const hasActions = Boolean(onReschedule || onNotes || onCancel);
 
   const handleChange = async (appointment, status) => {
     if (status === appointment.status) return;
@@ -44,6 +53,7 @@ const AppointmentTable = ({ appointments, usersById, doctorsById, onStatusChange
             <th>Doctor</th>
             <th>Date &amp; time</th>
             <th>Status</th>
+            {hasActions && <th />}
           </tr>
         </thead>
         <tbody>
@@ -94,6 +104,41 @@ const AppointmentTable = ({ appointments, usersById, doctorsById, onStatusChange
                     <AppointmentStatusBadge status={item.status} />
                   )}
                 </td>
+                {hasActions && (
+                  <td>
+                    <div className="flex flex-wrap items-center justify-end gap-1">
+                      {onNotes && (
+                        <button
+                          type="button"
+                          onClick={() => onNotes(item)}
+                          className="btn btn-ghost btn-xs"
+                        >
+                          Notes
+                        </button>
+                      )}
+                      {onReschedule && item.status === 'confirmed' && (
+                        <button
+                          type="button"
+                          onClick={() => onReschedule(item)}
+                          className="btn btn-ghost btn-xs"
+                        >
+                          Reschedule
+                        </button>
+                      )}
+                      {onCancel &&
+                        item.status !== 'cancelled' &&
+                        item.status !== 'completed' && (
+                          <button
+                            type="button"
+                            onClick={() => onCancel(item)}
+                            className="btn btn-ghost btn-xs text-error"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                    </div>
+                  </td>
+                )}
               </tr>
             );
           })}

@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react';
-import { FaSearch, FaSyncAlt } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaSyncAlt } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
+import {
+  BookAppointmentDialog,
+  PrescriptionDialog,
+  RescheduleDialog,
+} from '../../components/admin/AppointmentDialogs';
+import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import ErrorState from '../../components/common/ErrorState';
 import { TableSkeleton } from '../../components/common/Skeletons';
 import AppointmentTable from '../../components/appointments/AppointmentTable';
@@ -8,10 +15,13 @@ import { STATUS_OPTIONS } from '../../utils/constants';
 import SelectInput from '../../components/form/SelectInput';
 import TextInput from '../../components/form/TextInput';
 import useAdminAppointments from '../../hooks/useAdminAppointments';
+import { getErrorToast } from '../../utils/getErrorMessage';
 
 const AdminAppointments = () => {
   const {
     appointments,
+    users,
+    doctors,
     usersById,
     doctorsById,
     loading,
@@ -19,11 +29,36 @@ const AdminAppointments = () => {
     lookupError,
     reload,
     updateStatus,
+    upsertAppointment,
   } = useAdminAppointments();
 
   const [status, setStatus] = useState('');
   const [date, setDate] = useState('');
   const [search, setSearch] = useState('');
+  // { type: 'book' | 'reschedule' | 'notes' | 'cancel', item? }
+  const [dialog, setDialog] = useState(null);
+
+  const patients = useMemo(
+    () => users.filter((user) => user.role === 'patient' && user.is_active),
+    [users]
+  );
+
+  const closeDialog = () => setDialog(null);
+
+  const handleDone = (updated) => {
+    upsertAppointment(updated);
+    closeDialog();
+  };
+
+  const handleCancel = async () => {
+    try {
+      await updateStatus(dialog.item.id, 'cancelled');
+      toast.success(`Appointment #${dialog.item.id} cancelled`);
+    } catch (err) {
+      toast.error(getErrorToast(err, 'the appointment', 'Could not cancel it.'));
+      throw err;
+    }
+  };
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -53,15 +88,25 @@ const AdminAppointments = () => {
               Review every booking and update its status.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={reload}
-            disabled={loading}
-            className="btn btn-ghost btn-sm"
-          >
-            <FaSyncAlt />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={reload}
+              disabled={loading}
+              className="btn btn-ghost btn-sm"
+            >
+              <FaSyncAlt />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => setDialog({ type: 'book' })}
+              className="btn btn-primary btn-sm"
+            >
+              <FaPlus />
+              Book appointment
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -121,10 +166,53 @@ const AdminAppointments = () => {
               usersById={usersById}
               doctorsById={doctorsById}
               onStatusChange={updateStatus}
+              onReschedule={(item) => setDialog({ type: 'reschedule', item })}
+              onNotes={(item) => setDialog({ type: 'notes', item })}
+              onCancel={(item) => setDialog({ type: 'cancel', item })}
             />
           </>
         )}
       </div>
+
+      {dialog?.type === 'book' && (
+        <BookAppointmentDialog
+          patients={patients}
+          doctors={doctors}
+          onClose={closeDialog}
+          onDone={() => {
+            closeDialog();
+            reload();
+          }}
+        />
+      )}
+      {dialog?.type === 'reschedule' && (
+        <RescheduleDialog
+          appointment={dialog.item}
+          patient={usersById[dialog.item.patient_id]}
+          doctor={doctorsById[dialog.item.doctor_id]}
+          onClose={closeDialog}
+          onDone={handleDone}
+        />
+      )}
+      {dialog?.type === 'notes' && (
+        <PrescriptionDialog
+          appointment={dialog.item}
+          patient={usersById[dialog.item.patient_id]}
+          doctor={doctorsById[dialog.item.doctor_id]}
+          onClose={closeDialog}
+          onDone={handleDone}
+        />
+      )}
+      {dialog?.type === 'cancel' && (
+        <ConfirmDialog
+          title={`Cancel appointment #${dialog.item.id}?`}
+          message="The patient's slot will be released. This cannot be undone."
+          confirmLabel="Yes, cancel it"
+          danger
+          onConfirm={handleCancel}
+          onClose={closeDialog}
+        />
+      )}
     </div>
   );
 };

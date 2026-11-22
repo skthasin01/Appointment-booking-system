@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FaEdit, FaSyncAlt, FaTimes } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaSyncAlt, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 import { adminUpdateUser, getUsers } from '../../api/auth';
+import AddUserModal from '../../components/admin/AddUserModal';
 import ErrorState from '../../components/common/ErrorState';
 import { TableSkeleton } from '../../components/common/Skeletons';
 import CheckboxField from '../../components/form/CheckboxField';
@@ -36,6 +37,7 @@ const AdminUsers = () => {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -160,15 +162,25 @@ const AdminUsers = () => {
               Manage account details, roles, and access.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={loading}
-            className="btn btn-ghost btn-sm"
-          >
-            <FaSyncAlt />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="btn btn-ghost btn-sm"
+            >
+              <FaSyncAlt />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="btn btn-primary btn-sm"
+            >
+              <FaPlus />
+              Add user
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -232,6 +244,16 @@ const AdminUsers = () => {
           </div>
         )}
       </div>
+
+      {adding && (
+        <AddUserModal
+          onClose={() => setAdding(false)}
+          onCreated={(created) => {
+            setUsers((prev) => [...prev, created]);
+            setAdding(false);
+          }}
+        />
+      )}
 
       {editing && (
         <div
