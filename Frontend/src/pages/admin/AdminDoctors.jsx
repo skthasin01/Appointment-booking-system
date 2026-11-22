@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { FaEdit, FaStar, FaSyncAlt } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router';
+import { FaEdit, FaPlus, FaStar, FaSyncAlt, FaTrash } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
-import { getDoctors } from '../../api/doctors';
+import { deleteDoctor, getDoctors } from '../../api/doctors';
+import AddDoctorModal from '../../components/admin/AddDoctorModal';
+import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import ErrorState from '../../components/common/ErrorState';
 import { TableSkeleton } from '../../components/common/Skeletons';
 import DoctorAvatar from '../../components/doctors/DoctorAvatar';
+import { getErrorToast } from '../../utils/getErrorMessage';
 
 const AdminDoctors = () => {
+  const navigate = useNavigate();
+  const [adding, setAdding] = useState(false);
+  const [removing, setRemoving] = useState(null);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,6 +35,23 @@ const AdminDoctors = () => {
     load();
   }, [load]);
 
+  const handleCreated = (doctor) => {
+    setAdding(false);
+    // Continue on the edit page to add the photo and weekly schedule
+    navigate(`/admin/doctors/${doctor.id}`);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteDoctor(removing.id);
+      setDoctors((prev) => prev.filter((item) => item.id !== removing.id));
+      toast.success(`${removing.name} deleted`);
+    } catch (err) {
+      toast.error(getErrorToast(err, 'the doctor', 'Could not delete the doctor.'));
+      throw err;
+    }
+  };
+
   return (
     <div className="card border border-base-300 bg-base-100 shadow-sm">
       <div className="card-body gap-5 p-5">
@@ -35,18 +59,28 @@ const AdminDoctors = () => {
           <div>
             <h1 className="text-lg font-semibold text-base-content">Doctors</h1>
             <p className="text-sm text-base-content/60">
-              All doctor profiles registered in the system.
+              Add, edit, schedule or remove doctors.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={load}
-            disabled={loading}
-            className="btn btn-ghost btn-sm"
-          >
-            <FaSyncAlt />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={load}
+              disabled={loading}
+              className="btn btn-ghost btn-sm"
+            >
+              <FaSyncAlt />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="btn btn-primary btn-sm"
+            >
+              <FaPlus />
+              Add doctor
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -130,6 +164,14 @@ const AdminDoctors = () => {
                         >
                           View
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => setRemoving(doctor)}
+                          className="btn btn-ghost btn-xs text-error"
+                        >
+                          <FaTrash />
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -139,6 +181,20 @@ const AdminDoctors = () => {
           </div>
         )}
       </div>
+
+      {adding && (
+        <AddDoctorModal onClose={() => setAdding(false)} onCreated={handleCreated} />
+      )}
+      {removing && (
+        <ConfirmDialog
+          title={`Delete ${removing.name}?`}
+          message="This removes the doctor's profile, login account and all of their appointments. It cannot be undone."
+          confirmLabel="Yes, delete"
+          danger
+          onConfirm={handleDelete}
+          onClose={() => setRemoving(null)}
+        />
+      )}
     </div>
   );
 };

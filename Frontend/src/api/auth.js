@@ -41,3 +41,10 @@ export const getUsers = async () => {
   const { data } = await client.get('/auth/users');
   return data;
 };
+
+// POST /auth/users — admin only
+// payload: { name, email, password, phone?, role }
+export const createUser = async (payload) => {
+  const { data } = await client.post('/auth/users', payload);
+  return data;
+};

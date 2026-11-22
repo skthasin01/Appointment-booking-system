@@ -37,3 +37,14 @@ export const updateAppointmentStatus = async (
 
 export const cancelAppointment = (appointmentId) =>
   updateAppointmentStatus(appointmentId, 'cancelled');
+
+// PATCH /appointments/{id}/reschedule — patient (own), admin, receptionist
+// Only "confirmed" appointments can be moved.
+// payload: { appointment_date, start_time, end_time }
+export const rescheduleAppointment = async (appointmentId, payload) => {
+  const { data } = await client.patch(
+    `/appointments/${appointmentId}/reschedule`,
+    payload
+  );
+  return data;
+};

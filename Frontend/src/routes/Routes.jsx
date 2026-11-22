@@ -38,6 +38,7 @@ import AdminAppointments from '../pages/admin/AdminAppointments';
 import AdminDoctors from '../pages/admin/AdminDoctors';
 import AdminDoctorEdit from '../pages/admin/AdminDoctorEdit';
 import AdminUsers from '../pages/admin/AdminUsers';
+import AdminReviews from '../pages/admin/AdminReviews';
 
 const PublicLayout = () => (
   <>
@@ -201,6 +202,10 @@ const router = createBrowserRouter([
       {
         path: 'users',
         element: <AdminUsers />,
+      },
+      {
+        path: 'reviews',
+        element: <AdminReviews />,
       },
       {
         path: 'profile',

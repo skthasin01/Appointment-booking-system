@@ -7,6 +7,7 @@ import ErrorState from '../../components/common/ErrorState';
 import { FormSkeleton } from '../../components/common/Skeletons';
 import DoctorAvatar from '../../components/doctors/DoctorAvatar';
 import DoctorProfileEditor from '../../components/doctors/DoctorProfileEditor';
+import DoctorScheduleEditor from '../../components/admin/DoctorScheduleEditor';
 
 const AdminDoctorEdit = () => {
   const { doctorId } = useParams();
@@ -118,6 +119,7 @@ const AdminDoctorEdit = () => {
           </div>
 
           <DoctorProfileEditor doctor={doctor} onSaved={setDoctor} />
+          <DoctorScheduleEditor doctorId={doctor.id} doctorName={doctor.name} />
         </>
       )}
     </div>

@@ -35,3 +35,15 @@ export const uploadDoctorImage = async (doctorId, file) => {
   const { data } = await client.post(`/doctors/${doctorId}/image`, formData);
   return data;
 };
+
+// POST /doctors — admin only. Creates the doctor's login account and profile.
+export const createDoctor = async (payload) => {
+  const { data } = await client.post('/doctors', payload);
+  return data;
+};
+
+// DELETE /doctors/{id} — admin only. Also removes the doctor's account and appointments.
+export const deleteDoctor = async (doctorId) => {
+  const { data } = await client.delete(`/doctors/${doctorId}`);
+  return data;
+};

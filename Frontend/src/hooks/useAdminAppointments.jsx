@@ -47,11 +47,18 @@ const useAdminAppointments = () => {
     return updated;
   }, []);
 
+  const upsertAppointment = useCallback((updated) => {
+    setAppointments((prev) =>
+      prev.map((item) => (item.id === updated.id ? updated : item))
+    );
+  }, []);
+
   const usersById = useMemo(() => indexById(users), [users]);
   const doctorsById = useMemo(() => indexById(doctors), [doctors]);
 
   return {
     appointments,
+    users,
     doctors,
     usersById,
     doctorsById,
@@ -60,6 +67,7 @@ const useAdminAppointments = () => {
     lookupError,
     reload,
     updateStatus,
+    upsertAppointment,
   };
 };
 

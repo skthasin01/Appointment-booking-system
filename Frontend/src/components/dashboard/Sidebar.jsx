@@ -7,6 +7,7 @@ import {
   FaUser,
   FaUserMd,
   FaUsers,
+  FaStar,
   FaGlobe,
   FaSignOutAlt,
 } from "react-icons/fa";
@@ -27,6 +28,7 @@ const adminMenu = [
   { name: "Appointments", icon: FaCalendarCheck, path: "/admin/appointments" },
   { name: "Doctors", icon: FaUserMd, path: "/admin/doctors" },
   { name: "Users", icon: FaUsers, path: "/admin/users" },
+  { name: "Reviews", icon: FaStar, path: "/admin/reviews" },
   { name: "My Profile", icon: FaUser, path: "/admin/profile" },
 ];
 
