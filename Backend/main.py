@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_ROOT, exist_ok=True)
 app = FastAPI()
 app.mount("/uploads", StaticFiles(directory=UPLOAD_ROOT), name="uploads")
 
-origins = ["http://localhost:5173"]
+origins = ["http://localhost:5173", "https://splendorous-gelato-1c6f8e.netlify.app"]
 
 # One or more extra origins, separated by commas (set in Render)
 for url in os.getenv("FRONTEND_URL", "").split(","):
